@@ -14,7 +14,7 @@ using Umbraco.Community.BlockPreview.ViewEngines;
 
 namespace Umbraco.Community.BlockPreview
 {
-    internal class BlockPreviewComposer : IComposer
+    public class BlockPreviewComposer : IComposer
     {
         public void Compose(IUmbracoBuilder builder)
         {
