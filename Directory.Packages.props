@@ -4,7 +4,7 @@
   </PropertyGroup>
   <!-- Tool packages -->
   <ItemGroup Condition="'$(MSBuildProjectExtension)'=='.csproj'">
-    <GlobalPackageReference Include="Nerdbank.GitVersioning" Version="3.9.50" />
+    <GlobalPackageReference Include="Nerdbank.GitVersioning" Version="3.10.94" />
     <GlobalPackageReference Include="Umbraco.GitVersioning.Extensions" Version="0.2.0" />
     <GlobalPackageReference Include="Umbraco.JsonSchema.Extensions" Version="0.4.0" />
   </ItemGroup>
