@@ -31,8 +31,9 @@ namespace Umbraco.Community.BlockPreview.Extensions
             bool isBlockGridPreview = action.Equals(nameof(BlockPreviewApiController.PreviewGridBlock));
             bool isBlockListPreview = action.Equals(nameof(BlockPreviewApiController.PreviewListBlock));
             bool isRichTextPreview = action.Equals(nameof(BlockPreviewApiController.PreviewRichTextMarkup));
+            bool isSingleBlockPreview = action.Equals(nameof(BlockPreviewApiController.PreviewSingleBlock));
 
-            return requestControllerMatches && (isBlockGridPreview || isBlockListPreview || isRichTextPreview);
+            return requestControllerMatches && (isBlockGridPreview || isBlockListPreview || isRichTextPreview || isSingleBlockPreview);
         }
     }
 }
