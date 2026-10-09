@@ -265,6 +265,19 @@ builder.Services.AddUnique<IBlockPreviewResponseEnricher, BlockPreviewResponseEn
 - `settingsUdi` - The UDI of the settings element (if applicable)
 - `blockIndex` - The index of the block in the list/grid (if applicable)
 
+## Registering from a composer
+You can also register a custom service or enricher from your own `IComposer`. BlockPreview only registers its defaults when nothing else has been registered for that interface, so your registration wins whether your composer runs before or after BlockPreview's:
+
+```cs
+public class BlockPreviewCustomisationComposer : IComposer
+{
+    public void Compose(IUmbracoBuilder builder)
+    {
+        builder.Services.AddUnique<IBlockPreviewRequestEnricher, BlockPreviewRequestEnricher>(ServiceLifetime.Scoped);
+    }
+}
+```
+
 ## Replaceable Services
 
 BlockPreview's internal rendering pipeline is split into three focused services that can each be replaced independently. All three are registered as scoped services (per-request), so you can safely inject other scoped services like `IPublishedContentQuery` or access `HttpContext`.
