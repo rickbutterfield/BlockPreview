@@ -1,7 +1,7 @@
 {
   "name": "block-preview",
   "private": true,
-  "version": "6.2.0-alpha",
+  "version": "6.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
