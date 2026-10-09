@@ -1,4 +1,4 @@
-# CLAUDE.md - BlockPreview v5
+# CLAUDE.md - BlockPreview v6
 
 ## Overview
 
@@ -9,7 +9,7 @@
 - TypeScript/Lit - Frontend UI components (Umbraco backoffice extension)
 - Vite - Frontend build tooling
 
-**Target Platform:** Umbraco CMS v17+
+**Target Platform:** Umbraco CMS v18+
 
 **Package:** [Umbraco.Community.BlockPreview on NuGet](https://www.nuget.org/packages/Umbraco.Community.BlockPreview)
 
@@ -22,7 +22,7 @@
   /Umbraco.Community.BlockPreview       - Main .NET library (RCL)
   /Umbraco.Community.BlockPreview.UI    - TypeScript frontend (Lit components)
 /examples               - Example/test sites
-  /Umbraco.Community.BlockPreview.TestSite  - Umbraco 17 test site
+  /Umbraco.Community.BlockPreview.TestSite  - Umbraco 18 test site
 /tools                  - Build utilities
   /Umbraco.Community.BlockPreview.SchemaGenerator - JSON schema generator
 /docs                   - Documentation
@@ -77,21 +77,30 @@ Test site credentials:
 
 Uses [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning) for automatic versioning.
 
-- Version defined in `version.json` (currently `5.0.0`)
-- Release tags: `release-{version}` (e.g., `release-5.0.0`)
+- Version defined in `version.json`
+- Release tags: `release-{version}` (e.g., `release-6.1.1`)
 - Release branches: `release/{version}`
+
+**Cutting a release:**
+1. Branch `release/{version}` off `v6/dev`.
+2. Set the version in `version.json`, `src/Umbraco.Community.BlockPreview.UI/package.json`, and `package-lock.json`. Run `npm run build` so the package manifest restamps.
+3. PR that branch into `v6/main` and merge.
+4. Tag `release-{version}` on `v6/main` and push the tag. **The tag is what publishes.**
+
+The published version comes from `version.json` on the tagged commit, not from the tag name. Keep the two in step.
 
 ---
 
 ## Teamwork & Collaboration
 
 **Branching:**
-- Main branch: `v5/main`
-- Development branch: `v5/dev`
-- Feature branches merged via PR to `v5/dev`
+- Main branch: `v6/main`
+- Development branch: `v6/dev`
+- Feature branches merged via PR to `v6/dev`
+- The `v5/*` branches are a parallel line for Umbraco 17. Fixes that apply to both are ported across.
 
 **CI/CD:**
-- `release.yml` - Builds and pushes to NuGet on `release-*` tags or `release/*` branches
+- `release.yml` - Builds and pushes to NuGet. Triggers on `release-*` **tags only**, plus manual dispatch. Pushing a `release/*` branch does *not* publish; that trigger was removed in 6a4fc7c because cutting a release created both a branch and a tag and fired the publish twice.
 - `codeql.yml` - Security scanning
 
 **Contributing:** See `.github/CONTRIBUTING.md`
@@ -122,6 +131,47 @@ Uses [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning) 
 - [Configuration Guide](/docs/configuration.md)
 - [Usage Guide](/docs/usage.md)
 - [Advanced Customization](/docs/advanced-customization.md)
+
+---
+
+## Avoiding Breaking Changes
+
+No binary breaking changes within a major version: anything public in a released `X.y.z` must still compile and bind in every later `X.*` release. These patterns are adapted from [Umbraco CMS's CLAUDE.md](https://github.com/umbraco/Umbraco-CMS/blob/main/CLAUDE.md#6-avoiding-breaking-changes).
+
+**Package validation** (`EnablePackageValidation` in `Directory.Build.props`) checks the package against the `X.0.0` release on every pack. It only protects APIs that existed in `X.0.0`. Types and members added in later minors aren't covered, so apply these rules by hand to anything public that has shipped.
+
+### Obsolete constructor + new constructor
+When a public class needs different dependencies, keep the old constructor, mark it `[Obsolete]`, and make it call the new one. Resolve any new dependencies with `StaticServiceProvider`. Dependencies the class no longer needs are simply ignored.
+
+```csharp
+[Obsolete("Use the constructor with all parameters instead. Scheduled for removal in v7.")]
+public MyService(IDependencyA depA)
+    : this(depA, StaticServiceProvider.Instance.GetRequiredService<IDependencyB>())
+{
+}
+
+[ActivatorUtilitiesConstructor]
+public MyService(IDependencyA depA, IDependencyB depB) { ... }
+```
+
+- DI must use the **new** constructor. Microsoft DI picks the longest constructor it can satisfy, which is often the obsolete one. So mark the new constructor `[ActivatorUtilitiesConstructor]` and register the service with `ActivatorUtilities.CreateInstance<T>(sp)`.
+- Examples: `BlockPreviewApiController` (added `IBlockPreviewResponseEnricher`) and `BlockPreviewViewResolver` (dropped `IWebHostEnvironment`).
+
+### Obsolete method + new overload
+When a public method's signature needs to change, add the new overload and mark the old one `[Obsolete]`. The old one should call the new one with sensible defaults, and nothing in this repo should still call the obsolete one.
+
+### Default interface implementation
+When adding a member to a public interface, give it a default implementation so that external implementations keep compiling. In order of preference, the default should:
+1. Use the interface's existing members, even if the result isn't optimal.
+2. Return a sensible default, such as an empty collection or `null`.
+3. Throw `NotImplementedException`, if there's no reasonable default.
+
+Add `// TODO (v{X+1}): Remove the default implementation.` above it. Examples: `IBlockPreviewService.RenderSingleBlock` (falls back to `RenderListBlock`) and `IBlockPreviewService.GetStylesheetPaths` (wraps `GetStylesheetPath`).
+
+### General rules
+- Anything marked `[Obsolete]` stays for at least one full major version: if it's obsoleted in vN, the earliest it can be removed is vN+2. Every `[Obsolete]` message ends with `Scheduled for removal in v{N+2}.`, where N is the major version in `version.json`.
+- When one obsolete member has to call another, wrap the call in `#pragma warning disable CS0618` / `restore CS0618`.
+- Changing a public type from `internal` to `public` is an additive change, but after that it's a public API that's covered by these rules. Seal it unless it's meant to be inherited from.
 
 ---
 

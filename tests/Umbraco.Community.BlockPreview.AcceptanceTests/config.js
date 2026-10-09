@@ -14,7 +14,7 @@ const properties = [
     required: true
   },
   {
-    description: 'Enter CMS URL, or leave empty for default value of "https://localhost:44369"',
+    description: 'Enter CMS URL, or leave empty for default value of "https://localhost:44370"',
     name: 'baseUrl'
   }
 ];
@@ -30,7 +30,7 @@ prompt.get(properties, function (error, result) {
 
   var fileContent = `UMBRACO_USER_LOGIN=${result.username}
 UMBRACO_USER_PASSWORD=${result.password}
-URL=${result.baseUrl || "https://localhost:44369"}`;
+URL=${result.baseUrl || "https://localhost:44370"}`;
 
   fs.writeFile(configPath, fileContent, function (error) {
     if (error) return console.error(error);
