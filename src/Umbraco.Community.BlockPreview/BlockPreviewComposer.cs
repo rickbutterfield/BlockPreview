@@ -14,8 +14,18 @@ using Umbraco.Community.BlockPreview.ViewEngines;
 
 namespace Umbraco.Community.BlockPreview
 {
-    internal class BlockPreviewComposer : IComposer
+    /// <summary>
+    /// Registers the Block Preview services with Umbraco.
+    /// </summary>
+    /// <remarks>
+    /// This type is public so that your own composers can order themselves against it, for example
+    /// <c>[ComposeAfter(typeof(BlockPreviewComposer))]</c> when replacing one of the Block Preview services.
+    /// Disabling it with <c>[Disable(typeof(BlockPreviewComposer))]</c> is not supported: <c>AddBlockPreview()</c>
+    /// only configures options, so the preview endpoints would fail without the services registered here.
+    /// </remarks>
+    public sealed class BlockPreviewComposer : IComposer
     {
+        /// <inheritdoc />
         public void Compose(IUmbracoBuilder builder)
         {
             builder.AddInternal(config => config.BindConfiguration(Constants.Configuration.AppSettingsRoot));
