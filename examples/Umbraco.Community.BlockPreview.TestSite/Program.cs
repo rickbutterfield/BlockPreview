@@ -26,6 +26,11 @@ builder.CreateUmbracoBuilder()
             Enabled = true,
             Stylesheets = ["/css/myblockgridlayout.css"]
         };
+        options.SingleBlock = new()
+        {
+            Enabled = true,
+            Stylesheets = ["/css/myblockgridlayout.css"]
+        };
     })
     .Build();
 

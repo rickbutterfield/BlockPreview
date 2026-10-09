@@ -1,11 +1,14 @@
 using System.IO;
 using Moq;
 using NUnit.Framework;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Umbraco.Community.BlockPreview;
 using Umbraco.Community.BlockPreview.Enums;
+using Umbraco.Community.BlockPreview.Interfaces;
 using Umbraco.Community.BlockPreview.Services;
 
 namespace Umbraco.Community.BlockPreview.Tests.Services;
@@ -45,17 +48,21 @@ public class BlockPreviewViewResolverTests
             .Setup(e => e.GetView(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns((string _, string viewPath, bool _) => NotFound(viewPath));
 
+        _resolver = new BlockPreviewViewResolver(
+            _razorViewEngineMock.Object,
+            CreateOptionsMonitor());
+
+        // Clear cache before each test
+        _resolver.ClearCache();
+    }
+
+    private IOptionsMonitor<BlockPreviewOptions> CreateOptionsMonitor()
+    {
         var optionsMonitorMock = new Mock<IOptionsMonitor<BlockPreviewOptions>>();
         optionsMonitorMock.Setup(o => o.CurrentValue).Returns(_options);
         optionsMonitorMock.Setup(o => o.OnChange(It.IsAny<Action<BlockPreviewOptions, string?>>()))
             .Returns(Mock.Of<IDisposable>());
-
-        _resolver = new BlockPreviewViewResolver(
-            _razorViewEngineMock.Object,
-            optionsMonitorMock.Object);
-
-        // Clear cache before each test
-        _resolver.ClearCache();
+        return optionsMonitorMock.Object;
     }
 
     private static ViewEngineResult NotFound(string viewName)
@@ -63,6 +70,44 @@ public class BlockPreviewViewResolverTests
 
     private static ViewEngineResult Found(string viewName)
         => ViewEngineResult.Found(viewName, Mock.Of<IView>());
+
+    #region Constructors
+
+    [Test]
+    public void ObsoleteConstructor_WithWebHostEnvironment_ResolvesViews()
+    {
+        const string expectedPath = "Views/Partials/blockgrid/Components/testBlock.cshtml";
+        _razorViewEngineMock
+            .Setup(e => e.GetView("", expectedPath, false))
+            .Returns(Found(expectedPath));
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        var resolver = new BlockPreviewViewResolver(
+            _razorViewEngineMock.Object,
+            Mock.Of<IWebHostEnvironment>(),
+            CreateOptionsMonitor());
+#pragma warning restore CS0618
+
+        var result = resolver.ResolveView("testBlock", BlockType.BlockGrid);
+
+        Assert.That(result?.Success, Is.True);
+    }
+
+    [Test]
+    public void ServiceProvider_WithBothConstructorsAvailable_CreatesResolver()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(_razorViewEngineMock.Object);
+        services.AddSingleton(Mock.Of<IWebHostEnvironment>());
+        services.AddSingleton(CreateOptionsMonitor());
+        services.AddSingleton<IBlockPreviewViewResolver, BlockPreviewViewResolver>();
+
+        using var provider = services.BuildServiceProvider();
+
+        Assert.That(provider.GetRequiredService<IBlockPreviewViewResolver>(), Is.InstanceOf<BlockPreviewViewResolver>());
+    }
+
+    #endregion
 
     #region Precompiled / runtime-mode resolution
 
