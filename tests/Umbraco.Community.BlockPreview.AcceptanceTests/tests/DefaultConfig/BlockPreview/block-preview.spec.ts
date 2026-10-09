@@ -48,6 +48,13 @@ async function getBlockPreviewStatus(page: import("@playwright/test").Page, tagF
   }, tagFilter);
 }
 
+/** Waits until at least one block preview has rendered markup, or fails after 30 seconds. */
+async function waitForRenderedPreview(page: import("@playwright/test").Page, tagFilter?: string[]) {
+  await expect
+    .poll(async () => (await getBlockPreviewStatus(page, tagFilter)).renderedCount, { timeout: 30000 })
+    .toBeGreaterThan(0);
+}
+
 test.describe("Block Preview", () => {
   test.beforeEach(async ({ umbracoApi }, testInfo) => {
     await umbracoApi.report.report(testInfo);
@@ -78,7 +85,10 @@ test.describe("Block Preview", () => {
     // Act - Expand Home node and navigate to a Block Grid content node
     await umbracoUi.content.openContentCaretButtonForName('Home');
     await umbracoUi.content.goToContentWithName('Nested Block Grid Test');
-    await page.waitForTimeout(1000);
+
+    // Wait for at least one preview to render. The first render on a cold site can take
+    // several seconds (view compilation), so a fixed sleep is flaky.
+    await waitForRenderedPreview(page);
 
     // Assert - Preview elements should be present, rendered, and error-free
     const status = await getBlockPreviewStatus(page);
@@ -95,7 +105,10 @@ test.describe("Block Preview", () => {
     // Act - Expand Home node and navigate to a Block List content node
     await umbracoUi.content.openContentCaretButtonForName('Home');
     await umbracoUi.content.goToContentWithName('Block List Test');
-    await page.waitForTimeout(1000);
+
+    // Wait for at least one preview to render. The first render on a cold site can take
+    // several seconds (view compilation), so a fixed sleep is flaky.
+    await waitForRenderedPreview(page);
 
     // Assert - Preview elements should be present, rendered, and error-free
     const status = await getBlockPreviewStatus(page);
