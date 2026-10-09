@@ -16,10 +16,10 @@
   <!-- Package Validation -->
   <PropertyGroup Condition="'$(MSBuildProjectExtension)'=='.csproj'">
     <GenerateCompatibilitySuppressionFile>false</GenerateCompatibilitySuppressionFile>
-    <EnablePackageValidation>false</EnablePackageValidation>
-    <PackageValidationBaselineVersion>5.0.0</PackageValidationBaselineVersion>
-    <EnableStrictModeForCompatibleFrameworksInPackage>false</EnableStrictModeForCompatibleFrameworksInPackage>
-    <EnableStrictModeForCompatibleTfms>false</EnableStrictModeForCompatibleTfms>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>6.0.0</PackageValidationBaselineVersion>
+    <EnableStrictModeForCompatibleFrameworksInPackage>true</EnableStrictModeForCompatibleFrameworksInPackage>
+    <EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>
   </PropertyGroup>
 
   <!-- Calculate version only once for the whole repository -->
