@@ -60,6 +60,18 @@ public class HttpRequestExtensionsTests
     }
 
     [Test]
+    public void IsBlockPreviewRequest_WithPreviewSingleBlock_ReturnsTrue()
+    {
+        var request = CreateRequest(new RouteValueDictionary
+        {
+            { "controller", "BlockPreviewApi" },
+            { "action", "PreviewSingleBlock" }
+        });
+
+        Assert.That(request.IsBlockPreviewRequest(), Is.True);
+    }
+
+    [Test]
     public void IsBlockPreviewRequest_WithMissingRouteValues_ReturnsFalse()
     {
         var request = CreateRequest();
