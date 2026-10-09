@@ -40,11 +40,15 @@ namespace Umbraco.Community.BlockPreview.TestSite.Services
         /// <inheritdoc/>
         public override async Task<IReadOnlyList<string>> GetStylesheetPaths(BlockType blockType, IPublishedContent content, ControllerContext controllerContext)
         {
+            var stylesheets = await base.GetStylesheetPaths(blockType, content, controllerContext);
+
             if (controllerContext.HttpContext.Items.TryGetValue("theme", out var themeObj) && themeObj is string theme)
             {
-                return new[] { $"/css/{theme}.blockgridlayout.css" };
+                // The theme file only holds overrides, so load it after the shared stylesheets.
+                return [.. stylesheets, $"/css/themes/{theme.ToLowerInvariant()}.css"];
             }
-            return await base.GetStylesheetPaths(blockType, content, controllerContext);
+
+            return stylesheets;
         }
 
         /// <inheritdoc/>
