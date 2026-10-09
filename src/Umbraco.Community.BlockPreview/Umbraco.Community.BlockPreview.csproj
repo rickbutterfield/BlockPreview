@@ -29,6 +29,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Umbraco.Community.BlockPreview.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\..\.github\assets\icon.png">
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>
