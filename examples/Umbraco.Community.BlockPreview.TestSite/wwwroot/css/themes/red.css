@@ -1,0 +1,9 @@
+/* Overrides for content using the Red theme. Loaded after myblockgridlayout.css. */
+.hero {
+    border-top: 8px solid #c0392b;
+}
+
+.hero-content h1 {
+    text-decoration: underline 4px #c0392b;
+    text-underline-offset: 8px;
+}
