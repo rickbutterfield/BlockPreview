@@ -19,15 +19,15 @@
     "node": ">=22.12.0"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "0.97.1",
+    "@hey-api/openapi-ts": "0.97.3",
     "@open-wc/testing": "^4.0.0",
     "@types/mocha": "^10.0.10",
     "@umbraco-cms/backoffice": "18.0.0",
-    "@web/dev-server-esbuild": "^1.0.0",
+    "@web/dev-server-esbuild": "^2.0.0",
     "@web/test-runner": "^0.20.0",
     "@web/test-runner-playwright": "^0.11.0",
     "glob": "^10.3.10",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^8.3.4"
   }
 }
