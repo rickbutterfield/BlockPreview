@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Umbraco.Community.BlockPreview.Enums;
 using Umbraco.Community.BlockPreview.Extensions;
@@ -28,6 +30,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// </summary>
         /// <param name="razorViewEngine">The Razor view engine.</param>
         /// <param name="optionsMonitor">The block preview options monitor.</param>
+        [ActivatorUtilitiesConstructor]
         public BlockPreviewViewResolver(
             IRazorViewEngine razorViewEngine,
             IOptionsMonitor<BlockPreviewOptions> optionsMonitor)
@@ -35,6 +38,21 @@ namespace Umbraco.Community.BlockPreview.Services
             _razorViewEngine = razorViewEngine;
             _optionsMonitor = optionsMonitor;
             _optionsMonitor.OnChange(_ => ClearCache());
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlockPreviewViewResolver"/> class.
+        /// </summary>
+        /// <param name="razorViewEngine">The Razor view engine.</param>
+        /// <param name="webHostEnvironment">Not used.</param>
+        /// <param name="optionsMonitor">The block preview options monitor.</param>
+        [Obsolete("Use the constructor without IWebHostEnvironment instead. Scheduled for removal in v7.")]
+        public BlockPreviewViewResolver(
+            IRazorViewEngine razorViewEngine,
+            IWebHostEnvironment webHostEnvironment,
+            IOptionsMonitor<BlockPreviewOptions> optionsMonitor)
+            : this(razorViewEngine, optionsMonitor)
+        {
         }
 
         /// <inheritdoc/>
