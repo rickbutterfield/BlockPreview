@@ -1,5 +1,5 @@
 ﻿using Asp.Versioning;
-using HtmlAgilityPack;
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +18,7 @@ using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.HybridCache;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Community.BlockPreview.Enums;
+using Umbraco.Community.BlockPreview.Helpers;
 using Umbraco.Community.BlockPreview.Interfaces;
 using Umbraco.Community.BlockPreview.Services;
 using Umbraco.Extensions;
@@ -171,7 +172,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 }
                 catch (Exception ex)
                 {
-                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, ex.Message));
+                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, WebUtility.HtmlEncode(ex.Message)));
                     _logger.LogError(ex, string.Format(Constants.ErrorMessages.LoggerError, contentElementAlias));
                 }
             }
@@ -181,7 +182,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 markup = string.Format(Constants.ErrorMessages.WarningTemplate, Constants.ErrorMessages.ModelsBuilderError);
             }
 
-            string? cleanMarkup = CleanUpMarkup(markup);
+            string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
 
@@ -232,7 +233,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 }
                 catch (Exception ex)
                 {
-                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, ex.Message));
+                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, WebUtility.HtmlEncode(ex.Message)));
                     _logger.LogError(ex, string.Format(Constants.ErrorMessages.LoggerError, contentElementAlias));
                 }
             }
@@ -242,7 +243,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 markup = string.Format(Constants.ErrorMessages.WarningTemplate, Constants.ErrorMessages.ModelsBuilderError);
             }
 
-            string? cleanMarkup = CleanUpMarkup(markup);
+            string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
 
@@ -287,7 +288,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 }
                 catch (Exception ex)
                 {
-                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, ex.Message));
+                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, WebUtility.HtmlEncode(ex.Message)));
                     _logger.LogError(ex, string.Format(Constants.ErrorMessages.LoggerError, contentElementAlias));
                 }
             }
@@ -297,7 +298,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 markup = string.Format(Constants.ErrorMessages.WarningTemplate, Constants.ErrorMessages.ModelsBuilderError);
             }
 
-            string? cleanMarkup = CleanUpMarkup(markup);
+            string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
 
@@ -348,7 +349,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 }
                 catch (Exception ex)
                 {
-                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, ex.Message));
+                    markup = string.Format(Constants.ErrorMessages.ErrorTemplate, string.Format(Constants.ErrorMessages.RenderError, WebUtility.HtmlEncode(ex.Message)));
                     _logger.LogError(ex, string.Format(Constants.ErrorMessages.LoggerError, contentElementAlias));
                 }
             }
@@ -358,7 +359,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 markup = string.Format(Constants.ErrorMessages.WarningTemplate, Constants.ErrorMessages.ModelsBuilderError);
             }
 
-            string? cleanMarkup = CleanUpMarkup(markup);
+            string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
 
@@ -683,38 +684,6 @@ namespace Umbraco.Community.BlockPreview.Controllers
             return cacheItem;
         }
 
-        private static string CleanUpMarkup(string markup)
-        {
-            if (string.IsNullOrWhiteSpace(markup))
-                return markup;
-
-            var content = new HtmlDocument();
-            content.LoadHtml(markup);
-
-            // make sure links are not clickable in the back office, because this will prevent editing
-            var links = content.DocumentNode.SelectNodes("//a");
-
-            if (links != null)
-            {
-                foreach (var link in links)
-                {
-                    link.SetAttributeValue("href", "javascript:;");
-                    link.SetAttributeValue("data-block-preview-link", "true");
-                }
-            }
-
-            // disable forms so they can't be submitted via tab
-            var formElements = content.DocumentNode.SelectNodes("//input | //textarea | //select | //button");
-            if (formElements != null)
-            {
-                foreach (var formElement in formElements)
-                {
-                    formElement.SetAttributeValue("disabled", "disabled");
-                }
-            }
-
-            return content.DocumentNode.OuterHtml;
-        }
         #endregion
     }
 }
