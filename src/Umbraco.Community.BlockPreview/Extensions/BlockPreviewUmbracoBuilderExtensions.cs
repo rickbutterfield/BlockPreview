@@ -41,23 +41,23 @@ namespace Umbraco.Community.BlockPreview.Extensions
                 .BindConfiguration(Constants.Configuration.AppSettingsRoot)
                 .PostConfigure(x =>
                 {
-                    if (x.BlockGrid?.ViewLocations != null)
-                        x.BlockGrid.ViewLocations.Add(Constants.DefaultViewLocations.BlockGrid);
-
-                    if (x.BlockList?.ViewLocations != null)
-                        x.BlockList.ViewLocations.Add(Constants.DefaultViewLocations.BlockList);
-
-                    if (x.RichText?.ViewLocations != null)
-                        x.RichText.ViewLocations.Add(Constants.DefaultViewLocations.RichText);
-
-                    if (x.SingleBlock?.ViewLocations != null)
-                        x.SingleBlock.ViewLocations.Add(Constants.DefaultViewLocations.SingleBlock);
+                    // AddInternal runs from both BlockPreviewComposer and AddBlockPreview(), so only add each default once.
+                    AddDefaultViewLocation(x.BlockGrid, Constants.DefaultViewLocations.BlockGrid);
+                    AddDefaultViewLocation(x.BlockList, Constants.DefaultViewLocations.BlockList);
+                    AddDefaultViewLocation(x.RichText, Constants.DefaultViewLocations.RichText);
+                    AddDefaultViewLocation(x.SingleBlock, Constants.DefaultViewLocations.SingleBlock);
                 })
                 .ValidateDataAnnotations();
 
             configure?.Invoke(optionsBuilder);
 
             return builder;
+        }
+
+        private static void AddDefaultViewLocation(BlockTypeSettings? settings, string defaultLocation)
+        {
+            if (settings?.ViewLocations != null && !settings.ViewLocations.Contains(defaultLocation))
+                settings.ViewLocations.Add(defaultLocation);
         }
     }
 }
