@@ -597,7 +597,7 @@ const Wt = () => ({
     },
     trace: a("TRACE")
   };
-}, w = jt(Fe({ baseUrl: "http://localhost:26293/", throwOnError: !0 }));
+}, w = jt(Fe({ baseUrl: "http://localhost:26294/", throwOnError: !0 }));
 class U {
   static previewGridBlock(e) {
     return (e.client ?? w).post({

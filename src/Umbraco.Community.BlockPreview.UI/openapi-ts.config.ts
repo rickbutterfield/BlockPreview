@@ -2,7 +2,7 @@
 
 export default defineConfig({
     debug: true,
-    input: 'http://localhost:26293/umbraco/openapi/block-preview.json',
+    input: 'http://localhost:26294/umbraco/openapi/block-preview.json',
     output: {
         path: 'src/api',
     },
