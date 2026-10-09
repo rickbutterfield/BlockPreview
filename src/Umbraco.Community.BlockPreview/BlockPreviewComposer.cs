@@ -26,6 +26,7 @@ namespace Umbraco.Community.BlockPreview
     /// </remarks>
     public sealed class BlockPreviewComposer : IComposer
     {
+        /// <inheritdoc />
         public void Compose(IUmbracoBuilder builder)
         {
             builder.AddInternal(config => config.BindConfiguration(Constants.Configuration.AppSettingsRoot));
