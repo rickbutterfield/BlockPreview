@@ -35,6 +35,7 @@ export type PreviewGridBlockData = {
         contentUdi?: string;
         settingsUdi?: string;
         blockIndex?: number;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/grid';
 };
@@ -73,6 +74,7 @@ export type GetGridStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/grid/stylesheets';
 };
@@ -98,6 +100,7 @@ export type PreviewListBlockData = {
         contentUdi?: string;
         settingsUdi?: string;
         blockIndex?: number;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/list';
 };
@@ -136,6 +139,7 @@ export type GetListStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/list/stylesheets';
 };
@@ -158,6 +162,7 @@ export type PreviewRichTextMarkupData = {
         contentElementAlias?: string;
         culture?: string;
         documentTypeUnique?: string;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/rte';
 };
@@ -196,6 +201,7 @@ export type GetRteStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/rte/stylesheets';
 };
@@ -221,6 +227,7 @@ export type PreviewSingleBlockData = {
         contentUdi?: string;
         settingsUdi?: string;
         blockIndex?: number;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/single';
 };
@@ -240,6 +247,7 @@ export type GetSingleBlockStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
+        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/single/stylesheets';
 };

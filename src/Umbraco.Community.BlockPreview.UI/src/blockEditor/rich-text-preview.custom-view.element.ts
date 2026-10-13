@@ -20,6 +20,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
 
     protected _blockContext: BlockContext = {
         unique: '',
+        parentUnique: '',
         documentTypeUnique: '',
         contentUdi: '',
         settingsUdi: '',
@@ -71,6 +72,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
             this.consumeContext(UMB_DOCUMENT_WORKSPACE_CONTEXT, (context) => {
                 if (context) {
                     this._workspaceContextResolved = true;
+                    this.observeIsNewDocument(context.isNew);
                     this.observe(
                         observeMultiple([context.unique, context.contentTypeUnique]),
                         async ([unique, documentTypeUnique]) => {
@@ -170,6 +172,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
             {
                 blockEditorAlias: this._blockContext.blockEditorAlias,
                 nodeKey: this._blockContext.unique,
+                parentKey: this._blockContext.parentUnique || undefined,
                 contentElementAlias: this._blockContext.contentElementTypeAlias,
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 culture: this._blockContext.culture
@@ -180,7 +183,8 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getRteStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique
+            nodeKey: this._blockContext.unique,
+            parentKey: this._blockContext.parentUnique || undefined
         });
         return data;
     }
