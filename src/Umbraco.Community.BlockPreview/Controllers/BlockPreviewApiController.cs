@@ -160,11 +160,11 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out bool isPageContent);
+                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
 
-                    string? currentCulture = await GetCurrentCulture(culture, content);
+                    string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
-                    await SetupPublishedRequest(currentCulture, isPageContent ? content : null);
+                    await SetupPublishedRequest(currentCulture, page);
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
 
@@ -223,11 +223,11 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out bool isPageContent);
+                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
 
-                    string? currentCulture = await GetCurrentCulture(culture, content);
+                    string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
-                    await SetupPublishedRequest(currentCulture, isPageContent ? content : null);
+                    await SetupPublishedRequest(currentCulture, page);
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
 
@@ -280,11 +280,11 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out bool isPageContent);
+                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
 
-                    string? currentCulture = await GetCurrentCulture(culture, content);
+                    string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
-                    await SetupPublishedRequest(currentCulture, isPageContent ? content : null);
+                    await SetupPublishedRequest(currentCulture, page);
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias);
 
@@ -343,11 +343,11 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out bool isPageContent);
+                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
 
-                    string? currentCulture = await GetCurrentCulture(culture, content);
+                    string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
-                    await SetupPublishedRequest(currentCulture, isPageContent ? content : null);
+                    await SetupPublishedRequest(currentCulture, page);
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
 
@@ -666,38 +666,38 @@ namespace Umbraco.Community.BlockPreview.Controllers
         }
 
         /// <summary>
-        /// Resolves the content a preview renders against. <paramref name="isPageContent"/> tells whether it may
-        /// stand in for the current page on the published request: the node itself, or its parent while the node
-        /// has not been saved yet. The last resort, any document of the same type, lives elsewhere in the tree and
-        /// is only fit to own the block data.
+        /// Resolves the content that owns the block data and goes to the enrichers and the renderer: the node, or while
+        /// it has not been saved yet, a document of the same type. <paramref name="page"/> stands in for the current page
+        /// on the published request: the node, or while it has not been saved yet, its parent.
         /// </summary>
-        private IPublishedContent? GetPublishedContent(Guid? nodeKey, Guid? documentTypeUnique, Guid? parentKey, out bool isPageContent)
+        private IPublishedContent? GetPublishedContent(Guid? nodeKey, Guid? documentTypeUnique, Guid? parentKey, out IPublishedContent? page)
         {
-            isPageContent = false;
+            page = null;
 
             if (!_umbracoContextAccessor.TryGetUmbracoContext(out IUmbracoContext? context))
                 return null;
 
-            IPublishedContent? content = null;
-
             if (nodeKey.HasValue)
             {
-                content = context.Content?.GetById(preview: true, nodeKey.GetValueOrDefault());
+                page = context.Content?.GetById(preview: true, nodeKey.GetValueOrDefault());
+                if (page != null)
+                    return page;
             }
 
             // A node that has not been saved yet is not in the cache. Its parent sits where the node will,
             // so the preview renders within the same site, ancestors and domain culture.
-            if (content == null && parentKey.HasValue)
+            if (parentKey.HasValue)
             {
-                content = context.Content?.GetById(preview: true, parentKey.GetValueOrDefault());
+                page = context.Content?.GetById(preview: true, parentKey.GetValueOrDefault());
             }
 
-            if (content != null)
-            {
-                isPageContent = true;
-                return content;
-            }
+            // The parent usually has another document type, so it only owns the block data when no document
+            // of the node's own type exists yet.
+            return GetDocumentOfType(nodeKey, documentTypeUnique) ?? page;
+        }
 
+        private IPublishedContent? GetDocumentOfType(Guid? nodeKey, Guid? documentTypeUnique)
+        {
             var publishedContentType = _contentTypeCache.Get(PublishedItemType.Content, documentTypeUnique.GetValueOrDefault());
 
             if (publishedContentType == null)
