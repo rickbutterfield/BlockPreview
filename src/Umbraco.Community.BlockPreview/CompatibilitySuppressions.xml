@@ -10,6 +10,27 @@
   </Suppression>
   <Suppression>
     <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Umbraco.Community.BlockPreview.Controllers.BlockPreviewApiController.PreviewGridBlock(System.String,System.Guid,System.String,System.String,System.String,System.Guid,System.String,System.String,System.Nullable{System.Int32})</Target>
+    <Left>lib/net10.0/Umbraco.Community.BlockPreview.dll</Left>
+    <Right>lib/net10.0/Umbraco.Community.BlockPreview.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Umbraco.Community.BlockPreview.Controllers.BlockPreviewApiController.PreviewListBlock(System.String,System.Guid,System.String,System.String,System.String,System.Guid,System.String,System.String,System.Nullable{System.Int32})</Target>
+    <Left>lib/net10.0/Umbraco.Community.BlockPreview.dll</Left>
+    <Right>lib/net10.0/Umbraco.Community.BlockPreview.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Umbraco.Community.BlockPreview.Controllers.BlockPreviewApiController.PreviewRichTextMarkup(System.String,System.Guid,System.String,System.String,System.String,System.Guid)</Target>
+    <Left>lib/net10.0/Umbraco.Community.BlockPreview.dll</Left>
+    <Right>lib/net10.0/Umbraco.Community.BlockPreview.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
     <Target>M:Umbraco.Community.BlockPreview.Extensions.BlockPreviewUmbracoBuilderExtensions.AddInternal(Umbraco.Cms.Core.DependencyInjection.IUmbracoBuilder,System.Action{Microsoft.Extensions.Options.OptionsBuilder{Umbraco.Community.BlockPreview.BlockPreviewOptions}})</Target>
     <Left>lib/net10.0/Umbraco.Community.BlockPreview.dll</Left>
     <Right>lib/net10.0/Umbraco.Community.BlockPreview.dll</Right>

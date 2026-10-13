@@ -20,6 +20,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
 
     protected _blockContext: BlockListContext = {
         unique: '',
+        parentUnique: '',
         documentTypeUnique: '',
         contentUdi: '',
         settingsUdi: '',
@@ -68,6 +69,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
             this.consumeContext(UMB_CONTENT_WORKSPACE_CONTEXT, (context) => {
                 if (!context) return;
 
+                this.observeIsNewDocument(context.isNew);
                 this.observe(
                     observeMultiple([context.unique, context.structure.contentTypeUniques]),
                     async ([unique, contentTypeUniques]) => {
@@ -164,6 +166,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
             {
                 blockEditorAlias: this._blockContext.blockEditorAlias,
                 nodeKey: this._blockContext.unique,
+                parentKey: this._blockContext.parentUnique || undefined,
                 contentElementAlias: this._blockContext.contentElementTypeAlias,
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 contentUdi: this._blockContext.contentUdi,
@@ -177,7 +180,8 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getListStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique
+            nodeKey: this._blockContext.unique,
+            parentKey: this._blockContext.parentUnique || undefined
         });
         return data;
     }

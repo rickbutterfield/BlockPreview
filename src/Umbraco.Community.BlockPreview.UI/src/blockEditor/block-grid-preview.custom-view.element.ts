@@ -21,6 +21,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
 
     protected _blockContext: BlockGridContext = {
         unique: "",
+        parentUnique: "",
         documentTypeUnique: "",
         contentUdi: "",
         settingsUdi: "",
@@ -74,6 +75,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
             this.consumeContext(UMB_CONTENT_WORKSPACE_CONTEXT, (context) => {
                 if (!context) return;
 
+                this.observeIsNewDocument(context.isNew);
                 this.observe(
                     observeMultiple([context.unique, context.structure.contentTypeUniques]),
                     async ([unique, contentTypeUniques]) => {
@@ -222,6 +224,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
             {
                 blockEditorAlias: this._blockContext.blockEditorAlias,
                 nodeKey: this._blockContext.unique,
+                parentKey: this._blockContext.parentUnique || undefined,
                 contentElementAlias: this._blockContext.contentElementTypeAlias,
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 contentUdi: this._blockContext.contentUdi,
@@ -235,7 +238,8 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getGridStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique
+            nodeKey: this._blockContext.unique,
+            parentKey: this._blockContext.parentUnique || undefined
         });
         return data;
     }
