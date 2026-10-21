@@ -248,7 +248,7 @@ namespace Umbraco.Community.BlockPreview.Services
             {
                 _logger.LogDebug(
                     "BlockPreview: No property editor found for alias '{EditorAlias}', skipping conversion",
-                    propertyData.EditorAlias);
+                    [propertyData.EditorAlias]);
                 return;
             }
 
@@ -268,21 +268,22 @@ namespace Umbraco.Community.BlockPreview.Services
                 if (propertyData.Value is null && originalValue is not null)
                 {
                     _logger.LogWarning(
-                        "BlockPreview: FromEditor returned null for property '{EditorAlias}' (was {OriginalType}). Original value: {OriginalValue}",
-                        propertyData.EditorAlias, originalType, originalValue?.ToString()?[..Math.Min(originalValue.ToString()!.Length, 200)]);
+                        "BlockPreview: FromEditor returned null for property '{EditorAlias}' (was {originalType}). Original value: {originalValue}",
+                        [propertyData.EditorAlias, originalType, originalValue?.ToString()?[..Math.Min(originalValue.ToString()!.Length, 200)]]);
                 }
                 else if (originalType != newType)
                 {
                     _logger.LogDebug(
-                        "BlockPreview: FromEditor converted '{EditorAlias}' from {OriginalType} to {NewType}",
-                        propertyData.EditorAlias, originalType, newType);
+                        "BlockPreview: FromEditor converted '{EditorAlias}' from {originalType} to {newType}",
+                        [propertyData.EditorAlias, originalType, newType]);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex,
-                    "BlockPreview: FromEditor threw for property '{EditorAlias}' ({OriginalType}). Keeping original value",
-                    propertyData.EditorAlias, originalType);
+                _logger?.LogWarning(ex,
+                    "BlockPreview: FromEditor threw for property '{EditorAlias}' ({originalType}). Keeping original value",
+                    [propertyData.EditorAlias, originalType]
+                    );
                 propertyData.Value = originalValue;
             }
         }
