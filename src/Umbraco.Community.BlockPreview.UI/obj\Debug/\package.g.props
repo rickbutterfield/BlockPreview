@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <PackageJsonName Condition="$(PackageJsonName) == ''">block-preview</PackageJsonName>
+    <PackageJsonPrivate Condition="$(PackageJsonPrivate) == ''">true</PackageJsonPrivate>
+    <PackageJsonVersion Condition="$(PackageJsonVersion) == ''">5.7.0-alpha</PackageJsonVersion>
+    <PackageJsonType Condition="$(PackageJsonType) == ''">module</PackageJsonType>
+    <PackageJsonScriptsDev Condition="$(PackageJsonScriptsDev) == ''">vite</PackageJsonScriptsDev>
+    <PackageJsonScriptsBuild Condition="$(PackageJsonScriptsBuild) == ''">tsc &amp;&amp; vite build</PackageJsonScriptsBuild>
+    <PackageJsonScriptsPreview Condition="$(PackageJsonScriptsPreview) == ''">vite preview</PackageJsonScriptsPreview>
+    <PackageJsonScriptsWatch Condition="$(PackageJsonScriptsWatch) == ''">vite build --watch</PackageJsonScriptsWatch>
+    <PackageJsonScriptsGenerate Condition="$(PackageJsonScriptsGenerate) == ''">openapi-ts --file openapi-ts.config.ts</PackageJsonScriptsGenerate>
+    <PackageJsonScriptsTest Condition="$(PackageJsonScriptsTest) == ''">web-test-runner</PackageJsonScriptsTest>
+    <PackageJsonScriptsTestWatch Condition="$(PackageJsonScriptsTestWatch) == ''">web-test-runner --watch</PackageJsonScriptsTestWatch>
+    <PackageJsonDependenciesLit Condition="$(PackageJsonDependenciesLit) == ''">^3.1.0</PackageJsonDependenciesLit>
+    <PackageJsonEnginesNode Condition="$(PackageJsonEnginesNode) == ''">&gt;=22.12.0</PackageJsonEnginesNode>
+    <PackageJsonDevdependenciesHeyApiClientFetch Condition="$(PackageJsonDevdependenciesHeyApiClientFetch) == ''">^0.13.1</PackageJsonDevdependenciesHeyApiClientFetch>
+    <PackageJsonDevdependenciesHeyApiOpenapiTs Condition="$(PackageJsonDevdependenciesHeyApiOpenapiTs) == ''">^0.85.0</PackageJsonDevdependenciesHeyApiOpenapiTs>
+    <PackageJsonDevdependenciesOpenWcTesting Condition="$(PackageJsonDevdependenciesOpenWcTesting) == ''">^4.0.0</PackageJsonDevdependenciesOpenWcTesting>
+    <PackageJsonDevdependenciesTypesMocha Condition="$(PackageJsonDevdependenciesTypesMocha) == ''">^10.0.10</PackageJsonDevdependenciesTypesMocha>
+    <PackageJsonDevdependenciesUmbracoCmsBackoffice Condition="$(PackageJsonDevdependenciesUmbracoCmsBackoffice) == ''">^17.3.0</PackageJsonDevdependenciesUmbracoCmsBackoffice>
+    <PackageJsonDevdependenciesWebDevServerEsbuild Condition="$(PackageJsonDevdependenciesWebDevServerEsbuild) == ''">^1.0.0</PackageJsonDevdependenciesWebDevServerEsbuild>
+    <PackageJsonDevdependenciesWebTestRunner Condition="$(PackageJsonDevdependenciesWebTestRunner) == ''">^0.20.0</PackageJsonDevdependenciesWebTestRunner>
+    <PackageJsonDevdependenciesWebTestRunnerPlaywright Condition="$(PackageJsonDevdependenciesWebTestRunnerPlaywright) == ''">^0.11.0</PackageJsonDevdependenciesWebTestRunnerPlaywright>
+    <PackageJsonDevdependenciesGlob Condition="$(PackageJsonDevdependenciesGlob) == ''">^10.3.10</PackageJsonDevdependenciesGlob>
+    <PackageJsonDevdependenciesTypescript Condition="$(PackageJsonDevdependenciesTypescript) == ''">^5.8.3</PackageJsonDevdependenciesTypescript>
+    <PackageJsonDevdependenciesVite Condition="$(PackageJsonDevdependenciesVite) == ''">^6.3.5</PackageJsonDevdependenciesVite>
+  </PropertyGroup>
+</Project>

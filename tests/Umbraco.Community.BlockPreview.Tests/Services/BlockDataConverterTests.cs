@@ -19,6 +19,7 @@ public class BlockDataConverterTests
     private BlockDataConverter _converter = null!;
     private Mock<IDataTypeConfigurationCache> _dataTypeConfigCacheMock = null!;
     private Mock<IDataValueEditor> _valueEditorMock = null!;
+    private Mock<ILogger<BlockDataConverter>> _loggerMock = null!;
 
     private const string TestEditorAlias = "Umbraco.TextBox";
 
@@ -28,6 +29,7 @@ public class BlockDataConverterTests
         var jsonSerializerMock = new Mock<IJsonSerializer>();
         _dataTypeConfigCacheMock = new Mock<IDataTypeConfigurationCache>();
         _valueEditorMock = new Mock<IDataValueEditor>();
+        _loggerMock = new Mock<ILogger<BlockDataConverter>>();
 
         var dataEditorMock = new Mock<IDataEditor>();
         dataEditorMock.Setup(e => e.Alias).Returns(TestEditorAlias);
@@ -40,7 +42,7 @@ public class BlockDataConverterTests
             blockEditorConverter: null!,
             jsonSerializerMock.Object,
             Mock.Of<IBlockEditorElementTypeCache>(),
-            Mock.Of<ILogger<BlockDataConverter>>(),
+            _loggerMock.Object,
             propertyEditors,
             _dataTypeConfigCacheMock.Object);
     }
@@ -191,6 +193,56 @@ public class BlockDataConverterTests
             v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
             Times.Exactly(2));
     }
+
+    [TestCase("")]
+    [TestCase("   ")]
+    public void FormatBlockData_WhenFromEditorReturnsNullForEmptyString_DoesNotLogWarning(string original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(TestEditorAlias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [Test]
+    public void FormatBlockData_WhenFromEditorReturnsNullForEmptyCollection_DoesNotLogWarning()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(TestEditorAlias, new List<string>());
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [Test]
+    public void FormatBlockData_WhenFromEditorReturnsNullForRealValue_LogsWarning()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(TestEditorAlias, "real data");
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Once());
+    }
+
+    private void VerifyWarningLogged(Times times) =>
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            times);
 
     #endregion
 
