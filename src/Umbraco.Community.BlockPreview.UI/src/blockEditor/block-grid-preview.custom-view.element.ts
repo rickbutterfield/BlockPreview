@@ -6,6 +6,7 @@ import { UMB_BLOCK_GRID_ENTRY_CONTEXT, UMB_BLOCK_GRID_MANAGER_CONTEXT, UmbBlockG
 import { UMB_CONTENT_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/content";
 import { observeMultiple } from "@umbraco-cms/backoffice/observable-api";
 import { decideGridRenderTrigger, ResizeDebouncer } from './render-scheduler';
+import { NestedActionOverlapController } from './nested-action-overlap';
 
 const elementName = "block-grid-preview";
 
@@ -13,6 +14,7 @@ const elementName = "block-grid-preview";
 export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGridContext> {
 
     #previewDataSource: PreviewDataSource;
+    #nestedActionOverlap = new NestedActionOverlapController();
 
     constructor() {
         super();
@@ -60,9 +62,15 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
         await this.#observeContentWorkspace();
     }
 
+    override connectedCallback() {
+        super.connectedCallback();
+        this.#nestedActionOverlap.attach(this);
+    }
+
     override disconnectedCallback() {
         super.disconnectedCallback();
         this.#resizeDebouncer.cancel();
+        this.#nestedActionOverlap.detach();
     }
 
     async #observeContentWorkspace() {
