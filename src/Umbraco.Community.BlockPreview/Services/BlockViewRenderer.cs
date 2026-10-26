@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using System.Text.Encodings.Web;
 using Umbraco.Cms.Core.DependencyInjection;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Community.BlockPreview.Extensions;
 using Umbraco.Community.BlockPreview.Helpers;
 using Umbraco.Community.BlockPreview.Interfaces;
@@ -218,6 +220,8 @@ namespace Umbraco.Community.BlockPreview.Services
             if (viewComponent == null)
                 return null;
 
+            var arguments = GetViewComponentArguments(viewComponent, context.ViewData?.Model, context.Content);
+
             try
             {
                 await using var sw = new StringWriter();
@@ -233,7 +237,7 @@ namespace Umbraco.Community.BlockPreview.Services
 
                 var result = await _viewComponentHelperWrapper.InvokeAsync(
                     viewComponent.TypeInfo.AsType(),
-                    context.ViewData?.Model);
+                    arguments);
 
                 result.WriteTo(sw, HtmlEncoder.Default);
                 return sw.ToString();
@@ -271,7 +275,7 @@ namespace Umbraco.Community.BlockPreview.Services
 
                     var result = await helper.InvokeAsync(
                         viewComponent.TypeInfo.AsType(),
-                        context.ViewData?.Model);
+                        arguments);
 
                     result.WriteTo(sw, HtmlEncoder.Default);
                     return sw.ToString();
@@ -281,6 +285,42 @@ namespace Umbraco.Community.BlockPreview.Services
                     httpContext.RequestServices = originalServices;
                 }
             }
+        }
+
+        /// <summary>
+        /// Builds the arguments passed to a ViewComponent's InvokeAsync method.
+        /// A single parameter that accepts the block model gets the model itself, matching ASP.NET Core's own behaviour.
+        /// Otherwise the model's properties are passed by name, and any remaining parameters that accept the block
+        /// model or the current page are given those values, e.g. <c>InvokeAsync(BlockGridItem model, IPublishedContent? currentPage)</c>.
+        /// </summary>
+        internal static object? GetViewComponentArguments(ViewComponentDescriptor viewComponent, object? model, IPublishedContent? currentPage)
+        {
+            if (model == null)
+                return null;
+
+            var parameters = viewComponent.Parameters;
+            if (parameters.Count == 1 && parameters[0].ParameterType.IsInstanceOfType(model))
+                return model;
+
+            var arguments = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var property in model.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (property.CanRead && property.GetIndexParameters().Length == 0)
+                    arguments[property.Name] = property.GetValue(model);
+            }
+
+            foreach (var parameter in parameters)
+            {
+                if (parameter.Name == null || arguments.ContainsKey(parameter.Name))
+                    continue;
+
+                if (parameter.ParameterType.IsInstanceOfType(model))
+                    arguments[parameter.Name] = model;
+                else if (currentPage != null && parameter.ParameterType.IsInstanceOfType(currentPage))
+                    arguments[parameter.Name] = currentPage;
+            }
+
+            return arguments;
         }
 
         private sealed class FakeView : IView
