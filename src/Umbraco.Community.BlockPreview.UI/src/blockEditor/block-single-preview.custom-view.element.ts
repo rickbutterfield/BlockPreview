@@ -145,6 +145,7 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
                             }
                         };
 
+                        this.setExposes(exposes);
                         this._blockContext.blockIndex = contents?.indexOf(this.blockSingleValue.contentData[0]);
                         if (!this._htmlMarkup && !this._isLoading) {
                             this.renderBlockPreview();
@@ -165,7 +166,7 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 contentUdi: this._blockContext.contentUdi,
                 settingsUdi: this._blockContext.settingsUdi,
-                culture: this._blockContext.culture,
+                culture: this.previewCulture,
                 blockIndex: this._blockContext.blockIndex,
             }
         );

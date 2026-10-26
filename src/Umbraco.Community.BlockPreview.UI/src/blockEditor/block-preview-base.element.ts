@@ -2,11 +2,12 @@ import BlockPreviewContext from '../context/block-preview.context';
 import { BLOCK_PREVIEW_CONTEXT } from '../context/block-preview.context-token';
 import { BlockContext } from './types';
 import { css, html, ifDefined, nothing, property, PropertyValueMap, state, unsafeHTML } from '@umbraco-cms/backoffice/external/lit';
-import { UMB_BLOCK_WORKSPACE_CONTEXT, UmbBlockDataType } from '@umbraco-cms/backoffice/block';
+import { UMB_BLOCK_WORKSPACE_CONTEXT, UmbBlockDataType, type UmbBlockExposeModel } from '@umbraco-cms/backoffice/block';
 import type { UmbBlockEditorCustomViewConfiguration, UmbBlockEditorCustomViewElement } from '@umbraco-cms/backoffice/block-custom-view';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
 import { UMB_PROPERTY_DATASET_CONTEXT } from '@umbraco-cms/backoffice/property';
 import { UmbApiError } from '@umbraco-cms/backoffice/resources';
+import { resolvePreviewCulture } from './preview-culture';
 
 /** Umbraco elements that make up a block's action bar / resize affordances. A click
  *  whose composed path passes through one of these did not target the block body. */
@@ -90,6 +91,8 @@ export abstract class BlockPreviewBaseElement<TContext extends BlockContext = Bl
     protected _requestId: number = 0;
 
     protected _isConnected: boolean = false;
+
+    private _exposes: ReadonlyArray<UmbBlockExposeModel> = [];
 
     /** Tracks pointerdown position on the <a> tag to distinguish clicks from drags. */
     private _pointerStartPos: { x: number; y: number } | null = null;
@@ -274,6 +277,27 @@ export abstract class BlockPreviewBaseElement<TContext extends BlockContext = Bl
         }
         if (this._blockPreviewContext != null && this._blockContext.documentTypeUnique === '') {
             this._blockContext.documentTypeUnique = this._blockPreviewContext.getDocumentTypeUnique();
+        }
+    }
+
+    /**
+     * The culture to render the preview in: the culture being edited, or the culture the
+     * block was first created in when it hasn't been created in this one yet (#340).
+     */
+    protected get previewCulture(): string {
+        return resolvePreviewCulture(this._blockContext.culture, this._blockContext.contentUdi, this._exposes);
+    }
+
+    /**
+     * Stores the block value's exposes and re-renders an existing preview when they change
+     * the preview culture, e.g. once the block is created in the culture being edited.
+     */
+    protected setExposes(exposes: ReadonlyArray<UmbBlockExposeModel> | undefined) {
+        const previousCulture = this.previewCulture;
+        this._exposes = exposes ?? [];
+
+        if (this._htmlMarkup && this.previewCulture !== previousCulture) {
+            this.renderBlockPreview();
         }
     }
 
