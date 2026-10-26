@@ -51,7 +51,7 @@
 
     <!-- Add JSON schema file to package output -->
     <PropertyGroup>
-      <_BlockPreviewJsonSchemaReference>appsettings-schema.BlockPreview.json</_BlockPreviewJsonSchemaReference>
+      <_BlockPreviewJsonSchemaReference>appsettings-schema.blockpreview.json</_BlockPreviewJsonSchemaReference>
     </PropertyGroup>
 
     <!-- Generate JSON schema on build (and before copying to project) -->
