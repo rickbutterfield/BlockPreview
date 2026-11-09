@@ -8,7 +8,7 @@ MCP allows AI assistants (like Claude) to interact with external tools and servi
 
 | Server | Purpose | Package |
 |--------|---------|---------|
-| **umbraco-cms** | Manage Umbraco content types, documents, and media | `@umbraco-cms/mcp-dev@17` |
+| **umbraco-cms** | Manage Umbraco content types, documents, and media | `@umbraco-cms/mcp-dev@18` |
 | **playwright** | Browser automation for testing and debugging | `@playwright/mcp@latest` |
 
 ## Quick Start
@@ -67,6 +67,8 @@ The `UMBRACO_INCLUDE_TOOL_COLLECTIONS` variable controls which Umbraco MCP tools
 ```
 BlockPreview-v5/
 ├── .mcp.json              # MCP server configuration
+├── scripts/
+│   └── mcp-launch.mjs     # Starts the npx-based servers on Windows, macOS and Linux
 ├── .claude/
 │   ├── settings.json      # Shared Claude AI permissions (committed)
 │   └── settings.local.json # Local Claude overrides (gitignored)
@@ -112,7 +114,8 @@ Create `.claude/settings.local.json` to override permissions for your environmen
 ### MCP server not starting
 
 - Ensure Node.js is installed (v22+ recommended)
-- Run `npx @umbraco-cms/mcp-dev@17 --help` to verify the package works
+- Run `npx @umbraco-cms/mcp-dev@18 --help` to verify the package works
+- `.mcp.json` starts each server through `scripts/mcp-launch.mjs`, run with `node`. The script runs `npx` the right way on Windows (where it is `npx.cmd`) and on macOS and Linux. Don't change the `command` back to `cmd` or `npx`: each only works on some platforms.
 
 ## Further Reading
 
