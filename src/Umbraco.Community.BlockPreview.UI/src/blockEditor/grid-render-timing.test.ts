@@ -148,7 +148,7 @@ describe('block grid preview render timing (issues #293/#294/#322)', () => {
     it('posts the block\'s own content key when its layout entry has not arrived', async () => {
         root = await mountHost();
 
-        const entryFake = createGridEntryFake(root, new UmbBasicState(undefined), true);
+        const entryFake = createGridEntryFake(root, new UmbBasicState<UmbBlockGridLayoutAreaItemModel[] | undefined>(undefined), true);
         entryFake.layout = new UmbBasicState<UmbBlockGridLayoutModel>(undefined as never).asObservable();
         root.provideContext(UMB_BLOCK_GRID_ENTRY_CONTEXT, entryFake as never);
         root.provideContext(UMB_BLOCK_GRID_MANAGER_CONTEXT, createGridManagerFake(root) as never);
@@ -161,6 +161,24 @@ describe('block grid preview render timing (issues #293/#294/#322)', () => {
         expect(rendered).to.be.true;
         // An empty contentKey fails Guid deserialisation on the server.
         expect(JSON.parse(el.renderCalls[0])['Umbraco.BlockGrid'][0].contentKey).to.equal(CONTENT_KEY);
+    });
+
+    it('leaves settingsKey out for a block with no settings', async () => {
+        root = await mountHost();
+
+        root.provideContext(UMB_BLOCK_GRID_ENTRY_CONTEXT, createGridEntryFake(root, new UmbBasicState<UmbBlockGridLayoutAreaItemModel[] | undefined>(undefined), false) as never);
+        root.provideContext(UMB_BLOCK_GRID_MANAGER_CONTEXT, createGridManagerFake(root) as never);
+
+        const el = document.createElement(previewTag) as SpyGridPreview;
+        root.appendChild(el);
+
+        const rendered = await waitForCondition(() => el.renderCalls.length > 0);
+
+        expect(rendered).to.be.true;
+        // The view stores "no settings" as '', which fails Guid deserialisation on the server like an empty contentKey.
+        const entry = JSON.parse(el.renderCalls[0])['Umbraco.BlockGrid'][0];
+        expect(entry.settingsKey).to.be.undefined;
+        expect('settingsKey' in entry).to.be.false; // JSON.stringify drops undefined
     });
 
     it('re-renders with area content when layoutAreas arrives mid-request (issue #293)', async () => {
