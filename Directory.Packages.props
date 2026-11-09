@@ -25,6 +25,7 @@
   <!-- Third-party packages -->
   <ItemGroup>
     <PackageVersion Include="uSync" Version="17.0.0" />
+    <PackageVersion Include="Umbraco.Community.WorktreeDevPort" Version="0.4.1" />
   </ItemGroup>
   <!-- Test packages -->
   <ItemGroup>

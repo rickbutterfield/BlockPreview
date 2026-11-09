@@ -15,7 +15,7 @@ MCP allows AI assistants (like Claude) to interact with external tools and servi
 
 ### 1. Start Umbraco Locally
 
-Ensure your local Umbraco instance is running at `https://localhost:44369` (or update the URL to match your test site configuration).
+Ensure your local Umbraco instance is running. The test site picks its own port per git worktree (Umbraco.Community.WorktreeDevPort): `https://localhost:44355` in the main checkout, or run `git wdp-port` in a worktree to find its port. Set `UMBRACO_BASE_URL` to match.
 
 ### 2. Configure the OAuth Client in Umbraco
 
@@ -31,7 +31,7 @@ The MCP server will prompt for these credentials when it connects. Set the follo
 |----------|-------------|---------|
 | `UMBRACO_CLIENT_ID` | OAuth client ID configured in Umbraco | `umbraco-back-office-mcp` |
 | `UMBRACO_CLIENT_SECRET` | OAuth client secret (keep secure!) | `your-secure-secret` |
-| `UMBRACO_BASE_URL` | URL of your local Umbraco instance | `https://localhost:44369` |
+| `UMBRACO_BASE_URL` | URL of your local Umbraco instance | `https://localhost:44355` |
 | `NODE_TLS_REJECT_UNAUTHORIZED` | Set to `0` for self-signed certificates (local dev only) | `0` |
 | `UMBRACO_INCLUDE_TOOL_COLLECTIONS` | Comma-separated list of tool collections to enable | `data-type,document-type,document` |
 
