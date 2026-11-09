@@ -1,18 +1,18 @@
 {
   "mcpServers": {
     "umbraco-cms": {
-      "command": "cmd",
+      "command": "node",
       "args": [
-        "/c",
-        "npx",
+        "${CLAUDE_PROJECT_DIR:-.}/scripts/mcp-launch.mjs",
+        "-y",
         "@umbraco-cms/mcp-dev@17"
       ]
     },
     "playwright": {
-      "command": "cmd",
+      "command": "node",
       "args": [
-        "/c",
-        "npx",
+        "${CLAUDE_PROJECT_DIR:-.}/scripts/mcp-launch.mjs",
+        "-y",
         "@playwright/mcp@latest"
       ]
     }
