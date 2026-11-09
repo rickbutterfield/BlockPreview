@@ -67,6 +67,8 @@ npm run build
 dotnet run --project examples/Umbraco.Community.BlockPreview.TestSite
 ```
 
+The test site serves HTTPS on a port of its own for each git worktree ([Umbraco.Community.WorktreeDevPort](https://github.com/mattbrailsford/Umbraco.Community.WorktreeDevPort)): the main checkout gets `44355`, linked worktrees get one from `44300` up. Run `git wdp-port` in a worktree for its port; it prints nothing until the site has run once. The SQLite database lives inside the worktree (`umbraco/Data/`), so worktrees never share data. The acceptance tests (`npm run config`) and `npm run generate` read the same port. `npm run generate` also needs Node to trust the .NET dev certificate (`dotnet dev-certs https --trust`) or `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+
 Test site credentials:
 - Username: `admin@example.com`
 - Password: `1234567890`

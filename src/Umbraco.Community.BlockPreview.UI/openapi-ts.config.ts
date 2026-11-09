@@ -1,8 +1,12 @@
 ﻿import { defineConfig } from '@hey-api/openapi-ts';
+import { getPort } from 'worktree-dev-port';
 
 export default defineConfig({
     debug: true,
-    input: 'http://localhost:26294/umbraco/openapi/block-preview.json',
+    // The test site listens on this worktree's own port (see `git wdp-port`). Start it first:
+    // getPort() throws if no port has been assigned yet. The site serves HTTPS, so Node must trust the
+    // .NET dev certificate (`dotnet dev-certs https --trust`), or run this with NODE_TLS_REJECT_UNAUTHORIZED=0.
+    input: `https://localhost:${getPort()}/umbraco/openapi/block-preview.json`,
     output: {
         path: 'src/api',
     },
