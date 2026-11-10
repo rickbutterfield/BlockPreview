@@ -721,7 +721,8 @@ namespace Umbraco.Community.BlockPreview.Services
 
                     var gridItem = new BlockGridItem(item.ContentKey, areaContentElement!, item.SettingsKey, areaSettingsElement!);
                     gridItem.RowSpan = item.RowSpan ?? 1;
-                    gridItem.ColumnSpan = item.ColumnSpan ?? areaConfig.ColumnSpan ?? 12;
+                    // As in Umbraco's model, an item without a stored span gets the root grid's columns, at any depth.
+                    gridItem.ColumnSpan = item.ColumnSpan ?? gridColumns;
 
                     // As in Umbraco's own block grid model, an item at any depth gets the root grid's columns and the
                     // AreaGridColumns of its own block configuration (not the outer block's).
@@ -731,7 +732,9 @@ namespace Umbraco.Community.BlockPreview.Services
                     return gridItem;
                 }).WhereNotNull().ToList();
 
-                return new BlockGridArea(items, areaConfig.Alias!, areaConfig.RowSpan ?? 1, areaConfig.ColumnSpan ?? 12);
+                // An area without its own span follows the block's AreaGridColumns, then the root grid's columns.
+                return new BlockGridArea(items, areaConfig.Alias!, areaConfig.RowSpan ?? 1,
+                    areaConfig.ColumnSpan ?? matchingBlock.AreaGridColumns ?? gridColumns);
             }).WhereNotNull().ToArray();
         }
 
