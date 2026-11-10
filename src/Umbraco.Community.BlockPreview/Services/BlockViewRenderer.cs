@@ -292,6 +292,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// A single parameter that accepts the block model gets the model itself, matching ASP.NET Core's own behaviour.
         /// Otherwise the model's properties are passed by name, and any remaining parameters that accept the block
         /// model or the current page are given those values, e.g. <c>InvokeAsync(BlockGridItem model, IPublishedContent? currentPage)</c>.
+        /// A parameter typed <see cref="object"/> is never matched by type, because it accepts anything: it keeps its default.
         /// </summary>
         internal static object? GetViewComponentArguments(ViewComponentDescriptor viewComponent, object? model, IPublishedContent? currentPage)
         {
@@ -311,7 +312,9 @@ namespace Umbraco.Community.BlockPreview.Services
 
             foreach (var parameter in parameters)
             {
-                if (parameter.Name == null || arguments.ContainsKey(parameter.Name))
+                // An 'object' parameter accepts anything, so matching it by type would hand it the block or the page
+                // where the component expects its default (for example an optional 'object? htmlAttributes = null').
+                if (parameter.Name == null || arguments.ContainsKey(parameter.Name) || parameter.ParameterType == typeof(object))
                     continue;
 
                 if (parameter.ParameterType.IsInstanceOfType(model))
