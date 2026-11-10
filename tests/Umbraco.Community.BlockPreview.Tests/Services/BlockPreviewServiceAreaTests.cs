@@ -248,6 +248,41 @@ public class BlockPreviewServiceAreaTests
         return (BlockGridLayoutItem?)method!.Invoke(service, [layoutItems, blockInstance, gridColumns]);
     }
 
+    // Umbraco's model gives an item without a stored span the root grid's columns at every depth, and an area without
+    // its own span the block's AreaGridColumns, then the root grid's columns (issue #413). The numbers are distinct on
+    // purpose (root grid 16, the block's areas 10) so that using the wrong source fails the test.
+    [TestCase(null, null, 16, 16, TestName = "ConfigureBlockInstanceAreas_NoSpansStored_FallBackToRootGridColumns")]
+    [TestCase(null, 10, 16, 10, TestName = "ConfigureBlockInstanceAreas_AreaWithoutSpan_FallsBackToTheBlocksAreaGridColumns")]
+    [TestCase(6, 10, 16, 6, TestName = "ConfigureBlockInstanceAreas_AreaWithSpan_KeepsIt")]
+    public void ConfigureBlockInstanceAreas_SpanFallbacks(
+        int? areaSpan, int? blockAreaGridColumns, int expectedChildSpan, int expectedAreaSpan)
+    {
+        var (outerConfig, config) = CreateConfigurations();
+        config.GridColumns = 16;
+        outerConfig.AreaGridColumns = blockAreaGridColumns;
+        outerConfig.Areas[0].ColumnSpan = areaSpan;
+        // The child has no stored span.
+        var layout = CreateLayout(new BlockGridLayoutItem(ChildKey) { ColumnSpan = null, RowSpan = 1 });
+        var childData = new BlockItemData { Key = ChildKey, ContentTypeKey = ChildTypeKey };
+        var blockValue = new BlockEditorData<BlockGridValue, BlockGridLayoutItem>(
+            [], new BlockGridValue([layout]) { ContentData = [childData] });
+
+        var converter = new Mock<IBlockDataConverter>();
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
+            .Returns(Mock.Of<IPublishedElement>());
+        var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
+
+        ConfigureBlockInstanceAreas(CreateService(converter.Object), blockValue, outer, config, outerConfig, layout,
+            Mock.Of<IPublishedContent>());
+
+        var area = outer.Areas.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(area.ColumnSpan, Is.EqualTo(expectedAreaSpan), "the area's own span");
+            Assert.That(area.Single().ColumnSpan, Is.EqualTo(expectedChildSpan), "the child's span: the root grid's columns, not the area's");
+        });
+    }
+
     private static (BlockGridConfiguration.BlockGridBlockConfiguration Outer, BlockGridConfiguration Config) CreateConfigurations()
     {
         var outerConfig = new BlockGridConfiguration.BlockGridBlockConfiguration
