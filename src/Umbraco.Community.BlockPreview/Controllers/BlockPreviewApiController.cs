@@ -132,7 +132,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockPreviewApiController"/> class.
         /// </summary>
-        [Obsolete("Use the constructor with IBlockPreviewResponseEnricher parameter instead.")]
+        [Obsolete("Use the constructor with IBlockPreviewResponseEnricher parameter instead. Scheduled for removal in v8.")]
         public BlockPreviewApiController(
             IPublishedRouter publishedRouter,
             ILogger<BlockPreviewApiController> logger,
@@ -499,7 +499,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
         /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetGridStylesheets instead to support multiple stylesheets.")]
+        [Obsolete("Use GetGridStylesheets instead to support multiple stylesheets. Scheduled for removal in v8.")]
         [HttpGet("preview/grid/stylesheet")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> GetGridStylesheet(
@@ -548,7 +548,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
         /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetListStylesheets instead to support multiple stylesheets.")]
+        [Obsolete("Use GetListStylesheets instead to support multiple stylesheets. Scheduled for removal in v8.")]
         [HttpGet("preview/list/stylesheet")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> GetListStylesheet(
@@ -597,7 +597,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
         /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetRteStylesheets instead to support multiple stylesheets.")]
+        [Obsolete("Use GetRteStylesheets instead to support multiple stylesheets. Scheduled for removal in v8.")]
         [HttpGet("preview/rte/stylesheet")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> GetRteStylesheet(
