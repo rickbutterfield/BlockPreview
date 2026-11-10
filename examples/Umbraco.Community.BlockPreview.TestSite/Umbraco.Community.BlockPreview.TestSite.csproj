@@ -11,6 +11,7 @@
         <PackageReference Include="Umbraco.Cms.StaticAssets" VersionOverride="17.5.2" />
         <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" VersionOverride="17.5.2" />
         <PackageReference Include="uSync" />
+        <PackageReference Include="Umbraco.Community.WorktreeDevPort" />
     </ItemGroup>
 
     <ItemGroup>

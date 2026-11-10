@@ -1,5 +1,17 @@
 const prompt = require('prompt');
 const fs = require('fs');
+const { execSync } = require('child_process');
+
+// The test site listens on its own port in each git worktree (Umbraco.Community.WorktreeDevPort).
+// `git wdp-port` prints this worktree's port once the site has run; 44355 is the main checkout's.
+function defaultBaseUrl() {
+  try {
+    const port = execSync('git wdp-port', { encoding: 'utf8' }).trim();
+    if (port) return `https://localhost:${port}`;
+  } catch {}
+  return 'https://localhost:44355';
+}
+const defaultUrl = defaultBaseUrl();
 
 const properties = [
   {
@@ -14,7 +26,7 @@ const properties = [
     required: true
   },
   {
-    description: 'Enter CMS URL, or leave empty for default value of "https://localhost:44369"',
+    description: `Enter CMS URL, or leave empty for default value of "${defaultUrl}"`,
     name: 'baseUrl'
   }
 ];
@@ -30,7 +42,7 @@ prompt.get(properties, function (error, result) {
 
   var fileContent = `UMBRACO_USER_LOGIN=${result.username}
 UMBRACO_USER_PASSWORD=${result.password}
-URL=${result.baseUrl || "https://localhost:44369"}`;
+URL=${result.baseUrl || defaultUrl}`;
 
   fs.writeFile(configPath, fileContent, function (error) {
     if (error) return console.error(error);

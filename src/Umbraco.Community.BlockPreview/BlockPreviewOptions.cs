@@ -145,7 +145,7 @@ namespace Umbraco.Community.BlockPreview
         /// <remarks>
         /// This property is obsolete. Use <see cref="Stylesheets"/> instead to specify one or more stylesheets.
         /// </remarks>
-        [Obsolete("Use Stylesheets instead to specify one or more stylesheets.")]
+        [Obsolete("Use Stylesheets instead to specify one or more stylesheets. Scheduled for removal in v7.")]
         public string? Stylesheet { get; set; }
 
         /// <summary>
