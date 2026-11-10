@@ -214,6 +214,14 @@ Or in `appsettings.json`:
 - You can specify different stylesheets for Block Grid, Block List, and Rich Text editors
 - Duplicate stylesheet paths are automatically filtered out
 
+### Media queries and the preview width
+
+The preview renders your block's HTML inside the backoffice, in a column that is usually narrower than your live page. Media queries in your stylesheets still follow the width of the **browser window**, not of that column. A rule such as `@media (min-width: 1024px)` (or Tailwind's `lg:`) therefore applies in the preview as if the block had the whole window to itself, while the block's content wraps onto more lines than it does on the live site. Combined with a fixed `max-height` or `overflow: hidden`, this can clip the bottom of a block in the preview.
+
+To keep the preview consistent with the live site you can:
+- **Use container queries.** Give a wrapper element in your block's view `container-type: inline-size`, and write the layout rules inside it with `@container`, so they follow the width of the space the block is actually in.
+- **Loosen the limits for the preview only.** Stylesheets listed in `Stylesheets` are applied in the order they are listed, and only in block previews. A small extra stylesheet listed after your site's styles can reset `max-height` and `overflow` for blocks in the preview. Alternatively, add a class in your view when `Context.Request.IsBlockPreviewRequest()` is true (see the [Usage Guide](usage.md)) and target that class from your stylesheet.
+
 ### Migrating from Stylesheet (deprecated)
 
 The single `Stylesheet` property is deprecated. Migrate to `Stylesheets`:
