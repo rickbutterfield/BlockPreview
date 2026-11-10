@@ -236,7 +236,6 @@ namespace Umbraco.Community.BlockPreview.Services
                 return string.Format(Constants.ErrorMessages.ErrorTemplate, Constants.ErrorMessages.InvalidBlockInstance);
 
             var layoutItems = blockValue?.BlockValue?.GetLayouts();
-            BlockGridLayoutItem? matchingLayout = GetMatchingGridLayout(layoutItems!, blockInstance);
 
             IContentType? documentType = await _blockTypeCacheService.GetContentType(documentTypeUnique);
             if (documentType == null)
@@ -270,6 +269,9 @@ namespace Umbraco.Community.BlockPreview.Services
                BlockType.BlockGrid,
                blockIndex,
                matchingBlockConfig);
+
+            // The spans fall back to the root grid's columns, so this needs the grid configuration.
+            BlockGridLayoutItem? matchingLayout = GetMatchingGridLayout(layoutItems!, blockInstance, config.GridColumns ?? 12);
 
             ConfigureBlockInstanceAreas(blockValue!, blockInstance, config, matchingBlockConfig, matchingLayout!, content);
 
@@ -579,7 +581,11 @@ namespace Umbraco.Community.BlockPreview.Services
             return string.Format(Constants.ErrorMessages.WarningTemplate, errorMessage);
         }
 
-        private BlockGridLayoutItem? GetMatchingGridLayout(IEnumerable<BlockGridLayoutItem> layoutItems, BlockGridItem? blockInstance)
+        /// <summary>
+        /// Finds the layout item for the previewed block and copies its spans onto the block. As in Umbraco's own block grid
+        /// model, a block without a stored span gets the root grid's columns (<paramref name="gridColumns"/>), at any depth.
+        /// </summary>
+        private BlockGridLayoutItem? GetMatchingGridLayout(IEnumerable<BlockGridLayoutItem> layoutItems, BlockGridItem? blockInstance, int gridColumns)
         {
             if (layoutItems == null || blockInstance == null)
                 return null;
@@ -589,7 +595,7 @@ namespace Umbraco.Community.BlockPreview.Services
                 if (layoutItem.ContentKey == blockInstance.ContentKey)
                 {
                     blockInstance.RowSpan = layoutItem.RowSpan ?? 1;
-                    blockInstance.ColumnSpan = layoutItem.ColumnSpan ?? 12;
+                    blockInstance.ColumnSpan = layoutItem.ColumnSpan ?? gridColumns;
                     return layoutItem;
                 }
                 else
@@ -600,7 +606,7 @@ namespace Umbraco.Community.BlockPreview.Services
                         {
                             if (item.ContentKey != blockInstance.ContentKey) continue;
                             blockInstance.RowSpan = item.RowSpan ?? 1;
-                            blockInstance.ColumnSpan = item.ColumnSpan ?? layoutItem.ColumnSpan ?? 12;
+                            blockInstance.ColumnSpan = item.ColumnSpan ?? gridColumns;
                             return layoutItem;
                         }
                     }
@@ -683,7 +689,9 @@ namespace Umbraco.Community.BlockPreview.Services
             IPublishedContent content)
         {
             var gridColumns = config.GridColumns ?? 12;
-            blockInstance.AreaGridColumns = matchingBlock.AreaGridColumns ?? 12;
+            // As in Umbraco's model, AreaGridColumns stays null when the block has none configured, so Umbraco's own
+            // AreaGridColumns ?? GridColumns ?? 12 expression reaches the root grid's columns.
+            blockInstance.AreaGridColumns = matchingBlock.AreaGridColumns;
             blockInstance.GridColumns = gridColumns;
 
             var blockConfigAreaMap = matchingBlock.Areas.ToDictionary(area => area.Key);
@@ -718,7 +726,7 @@ namespace Umbraco.Community.BlockPreview.Services
                     // As in Umbraco's own block grid model, an item at any depth gets the root grid's columns and the
                     // AreaGridColumns of its own block configuration (not the outer block's).
                     var childBlockConfig = config.Blocks.FirstOrDefault(x => x.ContentElementTypeKey == areaContentData.ContentTypeKey);
-                    gridItem.AreaGridColumns = childBlockConfig?.AreaGridColumns ?? 12;
+                    gridItem.AreaGridColumns = childBlockConfig?.AreaGridColumns;
                     gridItem.GridColumns = gridColumns;
                     return gridItem;
                 }).WhereNotNull().ToList();
