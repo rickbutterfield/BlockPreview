@@ -265,7 +265,8 @@ namespace Umbraco.Community.BlockPreview.Services
 
                 var newType = propertyData.Value?.GetType().Name ?? "null";
 
-                if (propertyData.Value is null && originalValue is not null)
+                // FromEditor turning an empty value into null is expected, so only warn when real data was dropped
+                if (propertyData.Value is null && !IsEmptyValue(originalValue))
                 {
                     _logger.LogWarning(
                         "BlockPreview: FromEditor returned null for property '{EditorAlias}' (was {OriginalType}). Original value: {OriginalValue}",
@@ -286,5 +287,21 @@ namespace Umbraco.Community.BlockPreview.Services
                 propertyData.Value = originalValue;
             }
         }
+
+        private static bool IsEmptyValue(object? value) => value switch
+        {
+            null => true,
+            string s => string.IsNullOrWhiteSpace(s),
+            JsonElement element => element.ValueKind switch
+            {
+                JsonValueKind.Null or JsonValueKind.Undefined => true,
+                JsonValueKind.String => string.IsNullOrWhiteSpace(element.GetString()),
+                JsonValueKind.Array => element.GetArrayLength() == 0,
+                JsonValueKind.Object => !element.EnumerateObject().Any(),
+                _ => false
+            },
+            System.Collections.IEnumerable enumerable => !enumerable.GetEnumerator().MoveNext(),
+            _ => false
+        };
     }
 }
