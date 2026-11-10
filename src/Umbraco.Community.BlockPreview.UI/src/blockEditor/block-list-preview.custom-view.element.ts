@@ -4,6 +4,7 @@ import { PreviewDataSource } from '../repository';
 import { css, customElement, property, state } from "@umbraco-cms/backoffice/external/lit";
 import { UMB_BLOCK_LIST_ENTRY_CONTEXT, UMB_BLOCK_LIST_MANAGER_CONTEXT, UmbBlockListValueModel } from "@umbraco-cms/backoffice/block-list";
 import { UMB_CONTENT_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/content";
+import { filterLayoutsByKey, findBlockIndex } from './layout-key';
 import { observeMultiple } from "@umbraco-cms/backoffice/observable-api";
 
 const elementName = "block-list-preview";
@@ -22,6 +23,8 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
         unique: '',
         documentTypeUnique: '',
         contentUdi: '',
+        layoutKey: '',
+        isExternalContent: false,
         settingsUdi: '',
         blockEditorAlias: '',
         culture: '',
@@ -89,20 +92,23 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
                         context.settingsKey,
                         context.workspaceEditContentPath,
                         context.contentElementTypeAlias,
-                        context.contentElementTypeKey
+                        context.contentElementTypeKey,
+                        context.layout
                     ]),
                     async ([
                         contentUdi,
                         settingsUdi,
                         workspaceEditContentPath,
                         contentElementTypeAlias,
-                        contentElementTypeKey
+                        contentElementTypeKey,
+                        layout
                     ]) => {
                         this._blockContext.contentUdi = contentUdi ?? '';
                         this._blockContext.settingsUdi = settingsUdi ?? '';
                         this._blockContext.workspaceEditContentPath = workspaceEditContentPath ?? '';
                         this._blockContext.contentElementTypeAlias = contentElementTypeAlias ?? '';
                         this._blockContext.contentElementTypeKey = contentElementTypeKey ?? '';
+                        this.applyLayoutIdentity(layout);
 
                         // Only subscribe to manager context once contentUdi is known; subscribing with
                         // an empty key causes the manager to filter contentData to [] on its first emit,
@@ -144,12 +150,12 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
                             settingsData: settings?.filter(x => x.key === this._blockContext.settingsUdi) ?? [],
                             expose: exposes?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? [],
                             layout: {
-                                ['Umbraco.BlockList']: layouts?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? []
+                                ['Umbraco.BlockList']: filterLayoutsByKey(layouts, this._blockContext.layoutKey)
                             }
                         };
 
                         this.setExposes(exposes);
-                        this._blockContext.blockIndex = contents?.indexOf(this.blockListValue.contentData[0]);
+                        this._blockContext.blockIndex = findBlockIndex(layouts, this._blockContext.contentUdi, this._blockContext.layoutKey);
                         if (!this._htmlMarkup && !this._isLoading) {
                             this.renderBlockPreview();
                         }
@@ -171,6 +177,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
                 settingsUdi: this._blockContext.settingsUdi,
                 culture: this.previewCulture,
                 blockIndex: this._blockContext.blockIndex,
+                layoutKey: this.layoutKeyQuery
             }
         );
     }

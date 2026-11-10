@@ -98,6 +98,7 @@ function createGridManagerFake(host: HTMLElement) {
     return {
         contents: new UmbArrayState([{ key: CONTENT_KEY, contentTypeKey: ELEMENT_TYPE_KEY }], (x: { key: string }) => x.key).asObservable(),
         settings: new UmbArrayState<{ key: string }>([], (x) => x.key).asObservable(),
+        layouts: new UmbArrayState<{ key: string }>([], (x) => x.key).asObservable(),
         exposes: new UmbArrayState<{ contentKey: string }>([], (x) => x.contentKey).asObservable(),
         propertyAlias: new UmbStringState('myBlockGrid').asObservable(),
         getHostElement: () => host,

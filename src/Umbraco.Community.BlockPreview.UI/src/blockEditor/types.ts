@@ -8,6 +8,10 @@ export interface BlockContext {
   unique: string;
   documentTypeUnique: string;
   contentUdi: string;
+  /** Key of the block's layout item; tells apart several uses of the same element (Umbraco 19). */
+  layoutKey: string;
+  /** The block shows a Library (reusable) element, so the manager has no local content for it. */
+  isExternalContent: boolean;
   settingsUdi: string;
   blockEditorAlias: string;
   culture: string;

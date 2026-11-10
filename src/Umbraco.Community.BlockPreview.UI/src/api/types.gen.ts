@@ -31,6 +31,7 @@ export type PreviewGridBlockData = {
         contentUdi?: string;
         settingsUdi?: string;
         blockIndex?: number | string;
+        layoutKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/grid';
 };
@@ -75,6 +76,7 @@ export type PreviewListBlockData = {
         contentUdi?: string;
         settingsUdi?: string;
         blockIndex?: number | string;
+        layoutKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/list';
 };
@@ -116,6 +118,7 @@ export type PreviewRichTextMarkupData = {
         contentElementAlias?: string;
         culture?: string;
         documentTypeUnique?: string;
+        layoutKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/rte';
 };
@@ -160,6 +163,7 @@ export type PreviewSingleBlockData = {
         contentUdi?: string;
         settingsUdi?: string;
         blockIndex?: number | string;
+        layoutKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/single';
 };

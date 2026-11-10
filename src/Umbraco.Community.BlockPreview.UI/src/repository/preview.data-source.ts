@@ -13,6 +13,7 @@ export interface BlockPreviewQuery {
     settingsUdi: string;
     culture: string;
     blockIndex: number;
+    layoutKey?: string;
 }
 
 export interface RtePreviewQuery {
@@ -21,6 +22,7 @@ export interface RtePreviewQuery {
     contentElementAlias: string;
     documentTypeUnique: string;
     culture: string;
+    layoutKey?: string;
 }
 
 export interface StylesheetQuery {

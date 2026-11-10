@@ -4,6 +4,7 @@ import { PreviewDataSource } from '../repository';
 import { customElement, property, state } from "@umbraco-cms/backoffice/external/lit";
 import { UMB_BLOCK_RTE_ENTRY_CONTEXT, UMB_BLOCK_RTE_MANAGER_CONTEXT, UmbBlockRteValueModel } from "@umbraco-cms/backoffice/block-rte";
 import { UMB_DOCUMENT_WORKSPACE_CONTEXT } from '@umbraco-cms/backoffice/document';
+import { filterLayoutsByKey } from './layout-key';
 import { observeMultiple } from "@umbraco-cms/backoffice/observable-api";
 
 const elementName = "rich-text-preview";
@@ -22,6 +23,8 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
         unique: '',
         documentTypeUnique: '',
         contentUdi: '',
+        layoutKey: '',
+        isExternalContent: false,
         settingsUdi: '',
         blockEditorAlias: '',
         culture: '',
@@ -99,20 +102,23 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
                         context.settingsKey,
                         context.workspaceEditContentPath,
                         context.contentElementTypeAlias,
-                        context.contentElementTypeKey
+                        context.contentElementTypeKey,
+                        context.layout
                     ]),
                     async ([
                         contentUdi,
                         settingsUdi,
                         workspaceEditContentPath,
                         contentElementTypeAlias,
-                        contentElementTypeKey
+                        contentElementTypeKey,
+                        layout
                     ]) => {
                         this._blockContext.contentUdi = contentUdi ?? '';
                         this._blockContext.settingsUdi = settingsUdi ?? '';
                         this._blockContext.workspaceEditContentPath = workspaceEditContentPath ?? '';
                         this._blockContext.contentElementTypeAlias = contentElementTypeAlias ?? '';
                         this._blockContext.contentElementTypeKey = contentElementTypeKey ?? '';
+                        this.applyLayoutIdentity(layout);
 
                         // Only subscribe to manager context once contentUdi is known; subscribing with
                         // an empty key causes the manager to filter contentData to [] on its first emit,
@@ -153,7 +159,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
                             settingsData: settings?.filter(x => x.key === this._blockContext.settingsUdi) ?? [],
                             expose: exposes?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? [],
                             layout: {
-                                ['Umbraco.RichText']: layouts?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? []
+                                ['Umbraco.RichText']: filterLayoutsByKey(layouts, this._blockContext.layoutKey)
                             }
                         };
                         this.setExposes(exposes);
@@ -173,7 +179,8 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
                 nodeKey: this._blockContext.unique,
                 contentElementAlias: this._blockContext.contentElementTypeAlias,
                 documentTypeUnique: this._blockContext.documentTypeUnique,
-                culture: this.previewCulture
+                culture: this.previewCulture,
+                layoutKey: this.layoutKeyQuery
             }
         );
     }

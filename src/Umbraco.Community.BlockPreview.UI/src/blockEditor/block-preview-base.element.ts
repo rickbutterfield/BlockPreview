@@ -8,6 +8,7 @@ import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
 import { UMB_PROPERTY_DATASET_CONTEXT } from '@umbraco-cms/backoffice/property';
 import { UmbApiError } from '@umbraco-cms/backoffice/resources';
 import { resolvePreviewCulture } from './preview-culture';
+import { resolveLayoutKey, type LayoutItemLike } from './layout-key';
 
 /** Umbraco elements that make up a block's action bar / resize affordances. A click
  *  whose composed path passes through one of these did not target the block body. */
@@ -299,6 +300,17 @@ export abstract class BlockPreviewBaseElement<TContext extends BlockContext = Bl
         if (this._htmlMarkup && this.previewCulture !== previousCulture) {
             this.renderBlockPreview();
         }
+    }
+
+    /** Records the block's layout identity once its entry context has provided the layout item. */
+    protected applyLayoutIdentity(layout: LayoutItemLike | undefined) {
+        this._blockContext.layoutKey = resolveLayoutKey(layout, this._blockContext.contentUdi);
+        this._blockContext.isExternalContent = !!layout?.isExternalContent;
+    }
+
+    /** The layout key for the preview request, omitted while the block has none yet. */
+    protected get layoutKeyQuery(): string | undefined {
+        return this._blockContext.layoutKey || undefined;
     }
 
     protected async renderBlockPreview() {

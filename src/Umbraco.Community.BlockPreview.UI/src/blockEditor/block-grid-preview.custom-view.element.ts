@@ -5,6 +5,7 @@ import { css, customElement, property } from "@umbraco-cms/backoffice/external/l
 import { UMB_BLOCK_GRID_ENTRY_CONTEXT, UMB_BLOCK_GRID_MANAGER_CONTEXT, UmbBlockGridLayoutModel, UmbBlockGridValueModel, UmbBlockGridLayoutAreaItemModel } from "@umbraco-cms/backoffice/block-grid";
 import { UMB_CONTENT_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/content";
 import { observeMultiple } from "@umbraco-cms/backoffice/observable-api";
+import { findBlockIndex } from './layout-key';
 import { decideGridRenderTrigger, ResizeDebouncer } from './render-scheduler';
 
 const elementName = "block-grid-preview";
@@ -23,6 +24,8 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
         unique: "",
         documentTypeUnique: "",
         contentUdi: "",
+        layoutKey: "",
+        isExternalContent: false,
         settingsUdi: "",
         blockEditorAlias: "",
         culture: "",
@@ -122,6 +125,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         this._blockContext.areas = areas;
                         this._blockContext.layout = layout!;
                         this._blockContext.layoutAreas = layoutAreas;
+                        this.applyLayoutIdentity(layout);
 
                         if (!this.#managerObserved && this._blockContext.contentUdi) {
                             this.#managerObserved = true;
@@ -163,10 +167,11 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                     observeMultiple([
                         context.contents,
                         context.settings,
+                        context.layouts,
                         context.exposes,
                         context.propertyAlias
                     ]),
-                    async ([contents, settings, exposes, propertyAlias]) => {
+                    async ([contents, settings, layouts, exposes, propertyAlias]) => {
                         this._blockContext.blockEditorAlias = propertyAlias ?? '';
                         this.blockGridValue = {
                             contentData: contents ?? [],
@@ -175,7 +180,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                             layout: { ['Umbraco.BlockGrid']: this.#filterLayouts() }
                         };
                         this.setExposes(exposes);
-                        this._blockContext.blockIndex = (contents ?? []).findIndex(x => x.key === this._blockContext.contentUdi);
+                        this._blockContext.blockIndex = findBlockIndex(layouts, this._blockContext.contentUdi, this._blockContext.layoutKey);
                         if (!this._htmlMarkup && !this._isLoading) {
                             // Render straight away, even when the block has areas whose
                             // layoutAreas has not arrived. A newly added, unsaved block is
@@ -206,13 +211,16 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
         const layoutModel: UmbBlockGridLayoutModel[] =
             [
                 {
+                    // The layout item's own key; the same Library element can appear more than once.
+                    key: this._blockContext.layoutKey,
                     areas: areas,
                     columnSpan: this._blockContext.layout?.columnSpan ?? 0,
                     rowSpan: this._blockContext.layout?.rowSpan ?? 0,
                     // A new block renders before its layout entry arrives (#322), so fall back to the
                     // entry's own keys: an empty contentKey can't be read as a Guid on the server.
                     contentKey: this._blockContext.layout?.contentKey || this._blockContext.contentUdi,
-                    settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || undefined
+                    settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || undefined,
+                    isExternalContent: this._blockContext.isExternalContent || undefined
                 }
             ];
 
@@ -230,7 +238,8 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                 contentUdi: this._blockContext.contentUdi,
                 settingsUdi: this._blockContext.settingsUdi,
                 culture: this.previewCulture,
-                blockIndex: this._blockContext.blockIndex
+                blockIndex: this._blockContext.blockIndex,
+                layoutKey: this.layoutKeyQuery
             }
         );
     }
