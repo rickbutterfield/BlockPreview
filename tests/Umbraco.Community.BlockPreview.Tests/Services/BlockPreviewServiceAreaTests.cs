@@ -91,6 +91,94 @@ public class BlockPreviewServiceAreaTests
         });
     }
 
+    private static readonly Guid SettingsKey = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    private static readonly Guid OrphanKey = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
+
+    // Settings elements are stored under the layout item's SettingsKey, a different GUID from its ContentKey
+    // (Umbraco's BlockPropertyValueCreatorBase looks them up that way), so an area child's settings are found by
+    // SettingsKey (issue #396).
+    [Test]
+    public void ConfigureBlockInstanceAreas_AreaChildWithSettings_GetsItsSettings()
+    {
+        var (outerConfig, config) = CreateConfigurations();
+        var layout = CreateLayout(new BlockGridLayoutItem(ChildKey, SettingsKey) { ColumnSpan = 12, RowSpan = 1 });
+
+        var childData = new BlockItemData { Key = ChildKey, ContentTypeKey = ChildTypeKey };
+        var settingsData = new BlockItemData { Key = SettingsKey, ContentTypeKey = ChildTypeKey };
+        var blockValue = new BlockEditorData<BlockGridValue, BlockGridLayoutItem>(
+            [], new BlockGridValue([layout]) { ContentData = [childData], SettingsData = [settingsData] });
+
+        var contentElement = Mock.Of<IPublishedElement>();
+        var settingsElement = Mock.Of<IPublishedElement>();
+        var converter = new Mock<IBlockDataConverter>();
+        converter.Setup(c => c.ConvertToElement(childData, It.IsAny<IPublishedElement>())).Returns(contentElement);
+        converter.Setup(c => c.ConvertToElement(settingsData, It.IsAny<IPublishedElement>())).Returns(settingsElement);
+
+        var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
+
+        ConfigureBlockInstanceAreas(CreateService(converter.Object), blockValue, outer, config, outerConfig, layout,
+            Mock.Of<IPublishedContent>());
+
+        var child = outer.Areas.Single().Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(child.Content, Is.SameAs(contentElement));
+            Assert.That(child.Settings, Is.SameAs(settingsElement));
+            Assert.That(child.SettingsKey, Is.EqualTo(SettingsKey));
+        });
+    }
+
+    // A layout item can outlive its content data (Umbraco's BlockEditorValues.Clean drops content data of an element
+    // type that no longer exists, but not the layout items that point at it). One such child is skipped; it must not
+    // fail the whole preview, and the other children still render (issue #397).
+    [Test]
+    public void ConfigureBlockInstanceAreas_AreaChildWithoutContentData_IsSkipped()
+    {
+        var (outerConfig, config) = CreateConfigurations();
+        var layout = CreateLayout(
+            new BlockGridLayoutItem(OrphanKey) { ColumnSpan = 12, RowSpan = 1 },
+            new BlockGridLayoutItem(ChildKey) { ColumnSpan = 12, RowSpan = 1 });
+
+        var childData = new BlockItemData { Key = ChildKey, ContentTypeKey = ChildTypeKey };
+        var blockValue = new BlockEditorData<BlockGridValue, BlockGridLayoutItem>(
+            [], new BlockGridValue([layout]) { ContentData = [childData] });
+
+        // Like Umbraco's converter, this one can't take null content data.
+        var converter = new Mock<IBlockDataConverter>();
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
+            .Returns<BlockItemData, IPublishedElement>((data, _) =>
+                data == null ? throw new ArgumentNullException(nameof(data)) : Mock.Of<IPublishedElement>());
+
+        var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
+
+        ConfigureBlockInstanceAreas(CreateService(converter.Object), blockValue, outer, config, outerConfig, layout,
+            Mock.Of<IPublishedContent>());
+
+        Assert.That(outer.Areas.Single().Select(x => x.ContentKey), Is.EqualTo(new[] { ChildKey }));
+    }
+
+    private static (BlockGridConfiguration.BlockGridBlockConfiguration Outer, BlockGridConfiguration Config) CreateConfigurations()
+    {
+        var outerConfig = new BlockGridConfiguration.BlockGridBlockConfiguration
+        {
+            ContentElementTypeKey = OuterTypeKey,
+            Areas =
+            [
+                new BlockGridConfiguration.BlockGridAreaConfiguration { Key = AreaKey, Alias = "left", ColumnSpan = 6, RowSpan = 1 }
+            ]
+        };
+        var childConfig = new BlockGridConfiguration.BlockGridBlockConfiguration { ContentElementTypeKey = ChildTypeKey };
+        return (outerConfig, new BlockGridConfiguration { GridColumns = 12, Blocks = [outerConfig, childConfig] });
+    }
+
+    private static BlockGridLayoutItem CreateLayout(params BlockGridLayoutItem[] areaItems) =>
+        new(OuterKey)
+        {
+            ColumnSpan = 12,
+            RowSpan = 1,
+            Areas = [new BlockGridLayoutAreaItem(AreaKey) { Items = areaItems }]
+        };
+
     // BlockPreviewService's constructor takes several services this test doesn't need, so create it uninitialized and
     // set only the field that ConfigureBlockInstanceAreas reads.
     private static BlockPreviewService CreateService(IBlockDataConverter blockDataConverter)
