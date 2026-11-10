@@ -171,7 +171,7 @@
             /// <summary>
             /// Cache key template for block type.
             /// </summary>
-            [Obsolete("No longer used. Block types are now resolved via IPublishedModelFactory.")]
+            [Obsolete("No longer used. Block types are now resolved via IPublishedModelFactory. Scheduled for removal in v7.")]
             public const string BlockType = "BlockPreview_BlockType_{0}";
 
             /// <summary>

@@ -32,7 +32,7 @@ namespace Umbraco.Community.BlockPreview.NotificationHandlers
         /// Initializes a new instance of the <see cref="ContentTypeSavedNotificationHandler"/> class.
         /// </summary>
         /// <param name="appCaches">The application caches.</param>
-        [Obsolete("Use the constructor that accepts IBlockPreviewViewResolver.")]
+        [Obsolete("Use the constructor that accepts IBlockPreviewViewResolver. Scheduled for removal in v7.")]
         public ContentTypeSavedNotificationHandler(AppCaches appCaches)
             : this(appCaches, StaticServiceProvider.Instance.GetRequiredService<IBlockPreviewViewResolver>())
         {

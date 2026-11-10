@@ -63,7 +63,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="viewComponentHelperWrapper">The view component helper wrapper.</param>
         /// <param name="razorViewEngine">The Razor view engine.</param>
         /// <param name="viewComponentSelector">The view component selector.</param>
-        [Obsolete("Use the constructor that accepts IServiceScopeFactory. Scheduled for removal in v6.")]
+        [Obsolete("Use the constructor that accepts IServiceScopeFactory. Scheduled for removal in v7.")]
         public BlockViewRenderer(
             ITempDataProvider tempDataProvider,
             IViewComponentHelperWrapper viewComponentHelperWrapper,
