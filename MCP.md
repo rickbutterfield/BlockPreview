@@ -8,14 +8,14 @@ MCP allows AI assistants (like Claude) to interact with external tools and servi
 
 | Server | Purpose | Package |
 |--------|---------|---------|
-| **umbraco-cms** | Manage Umbraco content types, documents, and media | `@umbraco-cms/mcp-dev@17` |
+| **umbraco-cms** | Manage Umbraco content types, documents, and media | `@umbraco-cms/mcp-dev@18` |
 | **playwright** | Browser automation for testing and debugging | `@playwright/mcp@latest` |
 
 ## Quick Start
 
 ### 1. Start Umbraco Locally
 
-Ensure your local Umbraco instance is running at `https://localhost:44369` (or update the URL to match your test site configuration).
+Ensure your local Umbraco instance is running. The test site picks its own port per git worktree (Umbraco.Community.WorktreeDevPort): `https://localhost:44355` in the main checkout, or run `git wdp-port` in a worktree to find its port. Set `UMBRACO_BASE_URL` to match.
 
 ### 2. Configure the OAuth Client in Umbraco
 
@@ -31,7 +31,7 @@ The MCP server will prompt for these credentials when it connects. Set the follo
 |----------|-------------|---------|
 | `UMBRACO_CLIENT_ID` | OAuth client ID configured in Umbraco | `umbraco-back-office-mcp` |
 | `UMBRACO_CLIENT_SECRET` | OAuth client secret (keep secure!) | `your-secure-secret` |
-| `UMBRACO_BASE_URL` | URL of your local Umbraco instance | `https://localhost:44369` |
+| `UMBRACO_BASE_URL` | URL of your local Umbraco instance | `https://localhost:44355` |
 | `NODE_TLS_REJECT_UNAUTHORIZED` | Set to `0` for self-signed certificates (local dev only) | `0` |
 | `UMBRACO_INCLUDE_TOOL_COLLECTIONS` | Comma-separated list of tool collections to enable | `data-type,document-type,document` |
 
@@ -67,6 +67,8 @@ The `UMBRACO_INCLUDE_TOOL_COLLECTIONS` variable controls which Umbraco MCP tools
 ```
 BlockPreview-v5/
 ├── .mcp.json              # MCP server configuration
+├── scripts/
+│   └── mcp-launch.mjs     # Starts the npx-based servers on Windows, macOS and Linux
 ├── .claude/
 │   ├── settings.json      # Shared Claude AI permissions (committed)
 │   └── settings.local.json # Local Claude overrides (gitignored)
@@ -112,7 +114,8 @@ Create `.claude/settings.local.json` to override permissions for your environmen
 ### MCP server not starting
 
 - Ensure Node.js is installed (v22+ recommended)
-- Run `npx @umbraco-cms/mcp-dev@17 --help` to verify the package works
+- Run `npx @umbraco-cms/mcp-dev@18 --help` to verify the package works
+- `.mcp.json` starts each server through `scripts/mcp-launch.mjs`, run with `node`. The script runs `npx` the right way on Windows (where it is `npx.cmd`) and on macOS and Linux. Don't change the `command` back to `cmd` or `npx`: each only works on some platforms.
 
 ## Further Reading
 

@@ -95,6 +95,14 @@ If your solution needs to support `ViewComponents`, you will also need to edit y
 </div>
 ```
 
+When rendering a preview, BlockPreview invokes your ViewComponent with the block item, and supports these `InvokeAsync` signatures:
+
+- A single parameter that accepts the block item, e.g. `InvokeAsync(BlockGridItem item)`
+- Parameters named after the block item's properties, e.g. `InvokeAsync(IPublishedElement content, IPublishedElement? settings)`. With more than one parameter, a name that matches a property of the block item always takes that property's value, whatever the parameter's type, so a parameter called `content`, `settings` or `areas` must be able to accept it.
+- Parameters that accept the block item and/or the current page, e.g. `InvokeAsync(BlockGridItem model, IPublishedContent? currentPage)`. Any other parameter whose type accepts the block item or an `IPublishedContent` is filled in the same way, whatever its name; that includes `IPublishedElement`, which gets the page, not the block's content. The current page is the content the preview is shown for; if that document isn't saved yet, it is another document of the same document type (the first one in the content tree, published or not), when there is one. A parameter typed `object` is never filled this way, and any parameter that isn't filled keeps its default value.
+
+If your front-end passes extra arguments, such as `new { model = item, currentPage = Model }`, make sure they follow one of these patterns so the back office preview gets the same values.
+
 
 All of these extensions can be found in the namespace `Umbraco.Community.BlockPreview.Extensions`. This ensures that the grid editors correctly load in the back office.
 

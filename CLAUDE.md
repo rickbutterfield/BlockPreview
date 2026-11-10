@@ -67,6 +67,8 @@ npm run build
 dotnet run --project examples/Umbraco.Community.BlockPreview.TestSite
 ```
 
+The test site serves HTTPS on a port of its own for each git worktree ([Umbraco.Community.WorktreeDevPort](https://github.com/mattbrailsford/Umbraco.Community.WorktreeDevPort)): the main checkout gets `44355`, linked worktrees get one from `44300` up. Run `git wdp-port` in a worktree for its port; it prints nothing until the site has run once. The SQLite database lives inside the worktree (`umbraco/Data/`), so worktrees never share data. The acceptance tests (`npm run config`) and `npm run generate` read the same port. `npm run generate` also needs Node to trust the .NET dev certificate (`dotnet dev-certs https --trust`) or `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+
 Test site credentials:
 - Username: `admin@example.com`
 - Password: `1234567890`
@@ -180,3 +182,12 @@ Add `// TODO (v{X+1}): Remove the default implementation.` above it. Examples: `
 **Razor view caching:** Never cache `ViewEngineResult` objects. ASP.NET Core's `RazorView` holds a single `IRazorPage` with mutable state (`ViewContext`, `Output`) that is set during `RenderAsync`. Caching the `ViewEngineResult` shares the page across concurrent requests, causing race conditions (empty renders, `ObjectDisposedException`). Cache the resolved view **path** instead and call `_razorViewEngine.GetView(path)` per request to get a fresh `RazorView`/`IRazorPage`.
 
 **Debugging approach:** When investigating rendering bugs, add diagnostic logging first before building fixes. Symptoms like empty strings, disposed object exceptions, and load-dependent failures can all stem from a single shared-state concurrency bug. Log the actual exception types and locations to avoid misdiagnosing the root cause.
+
+---
+
+## Issue tracker
+- Type: GitHub Issues
+- Location: rickbutterfield/BlockPreview (same repo as the source)
+- Access: `gh` CLI (`gh issue ... -R rickbutterfield/BlockPreview`)
+- State labels: default
+- Needs-info timeout: 30 days

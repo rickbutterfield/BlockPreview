@@ -174,6 +174,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                             expose: exposes ?? [],
                             layout: { ['Umbraco.BlockGrid']: this.#filterLayouts() }
                         };
+                        this.setExposes(exposes);
                         this._blockContext.blockIndex = (contents ?? []).findIndex(x => x.key === this._blockContext.contentUdi);
                         if (!this._htmlMarkup && !this._isLoading) {
                             // Render straight away, even when the block has areas whose
@@ -208,8 +209,10 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                     areas: areas,
                     columnSpan: this._blockContext.layout?.columnSpan ?? 0,
                     rowSpan: this._blockContext.layout?.rowSpan ?? 0,
-                    contentKey: this._blockContext.layout?.contentKey ?? '',
-                    settingsKey: this._blockContext.layout?.settingsKey
+                    // A new block renders before its layout entry arrives (#322), so fall back to the
+                    // entry's own keys: an empty contentKey can't be read as a Guid on the server.
+                    contentKey: this._blockContext.layout?.contentKey || this._blockContext.contentUdi,
+                    settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || undefined
                 }
             ];
 
@@ -226,7 +229,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 contentUdi: this._blockContext.contentUdi,
                 settingsUdi: this._blockContext.settingsUdi,
-                culture: this._blockContext.culture,
+                culture: this.previewCulture,
                 blockIndex: this._blockContext.blockIndex
             }
         );

@@ -61,7 +61,7 @@ namespace Umbraco.Community.BlockPreview.Interfaces
         /// <param name="blockEditorAlias">The block editor alias (no longer used).</param>
         /// <param name="documentTypeUnique">The document type unique identifier (no longer used).</param>
         /// <returns>The rendered HTML.</returns>
-        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters.")]
+        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters. Scheduled for removal in v7.")]
         Task<string> RenderRichTextBlock(string blockData, IPublishedContent content, ControllerContext controllerContext, string blockEditorAlias, Guid documentTypeUnique);
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Umbraco.Community.BlockPreview.Interfaces
         /// <param name="content">The published content.</param>
         /// <param name="controllerContext">The controller context.</param>
         /// <returns>The stylesheet path, or null if not found.</returns>
-        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets.")]
+        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets. Scheduled for removal in v7.")]
         Task<string?> GetStylesheetPath(BlockType blockType, IPublishedContent content, ControllerContext controllerContext);
 
         /// <summary>

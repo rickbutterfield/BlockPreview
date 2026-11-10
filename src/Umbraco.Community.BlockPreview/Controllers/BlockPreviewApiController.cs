@@ -46,6 +46,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         private readonly IScopeProvider _scopeProvider;
         private readonly IBlockPreviewRequestEnricher _requestEnricher;
         private readonly IBlockPreviewResponseEnricher _responseEnricher;
+        private readonly IEntityService _entityService;
 
         private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
 
@@ -68,7 +69,8 @@ namespace Umbraco.Community.BlockPreview.Controllers
             IPublishedContentTypeCache contentTypeCache,
             IScopeProvider scopeProvider,
             IBlockPreviewRequestEnricher requestEnricher,
-            IBlockPreviewResponseEnricher responseEnricher)
+            IBlockPreviewResponseEnricher responseEnricher,
+            IEntityService entityService)
         {
             _publishedRouter = publishedRouter;
             _logger = logger;
@@ -84,12 +86,53 @@ namespace Umbraco.Community.BlockPreview.Controllers
             _scopeProvider = scopeProvider;
             _requestEnricher = requestEnricher;
             _responseEnricher = responseEnricher;
+            _entityService = entityService;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockPreviewApiController"/> class.
         /// </summary>
-        [Obsolete("Use the constructor with IBlockPreviewResponseEnricher parameter instead.")]
+        [Obsolete("Use the constructor with IEntityService parameter instead. Scheduled for removal in v7.")]
+        public BlockPreviewApiController(
+            IPublishedRouter publishedRouter,
+            ILogger<BlockPreviewApiController> logger,
+            IUmbracoContextAccessor umbracoContextAccessor,
+            ContextCultureService contextCultureSwitcher,
+            IBlockPreviewService blockPreviewService,
+            ILanguageService languageService,
+            IOptions<BlockPreviewOptions> blockPreviewSettings,
+            ITypeFinder typeFinder,
+            AppCaches appCaches,
+            IElementsCache elementsCache,
+            IDocumentCacheService documentCacheService,
+            IPublishedContentTypeCache contentTypeCache,
+            IScopeProvider scopeProvider,
+            IBlockPreviewRequestEnricher requestEnricher,
+            IBlockPreviewResponseEnricher responseEnricher)
+            : this(
+                publishedRouter,
+                logger,
+                umbracoContextAccessor,
+                contextCultureSwitcher,
+                blockPreviewService,
+                languageService,
+                blockPreviewSettings,
+                typeFinder,
+                appCaches,
+                elementsCache,
+                documentCacheService,
+                contentTypeCache,
+                scopeProvider,
+                requestEnricher,
+                responseEnricher,
+                StaticServiceProvider.Instance.GetRequiredService<IEntityService>())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlockPreviewApiController"/> class.
+        /// </summary>
+        [Obsolete("Use the constructor with IBlockPreviewResponseEnricher parameter instead. Scheduled for removal in v7.")]
         public BlockPreviewApiController(
             IPublishedRouter publishedRouter,
             ILogger<BlockPreviewApiController> logger,
@@ -120,7 +163,8 @@ namespace Umbraco.Community.BlockPreview.Controllers
                 contentTypeCache,
                 scopeProvider,
                 requestEnricher,
-                StaticServiceProvider.Instance.GetRequiredService<IBlockPreviewResponseEnricher>())
+                StaticServiceProvider.Instance.GetRequiredService<IBlockPreviewResponseEnricher>(),
+                StaticServiceProvider.Instance.GetRequiredService<IEntityService>())
         {
         }
 
@@ -455,7 +499,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
         /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetGridStylesheets instead to support multiple stylesheets.")]
+        [Obsolete("Use GetGridStylesheets instead to support multiple stylesheets. Scheduled for removal in v7.")]
         [HttpGet("preview/grid/stylesheet")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> GetGridStylesheet(
@@ -504,7 +548,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
         /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetListStylesheets instead to support multiple stylesheets.")]
+        [Obsolete("Use GetListStylesheets instead to support multiple stylesheets. Scheduled for removal in v7.")]
         [HttpGet("preview/list/stylesheet")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> GetListStylesheet(
@@ -553,7 +597,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
         /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetRteStylesheets instead to support multiple stylesheets.")]
+        [Obsolete("Use GetRteStylesheets instead to support multiple stylesheets. Scheduled for removal in v7.")]
         [HttpGet("preview/rte/stylesheet")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> GetRteStylesheet(
@@ -658,7 +702,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
 
             IPublishedContent? content = null;
 
-            if (nodeKey.HasValue)
+            if (nodeKey.HasValue && !IsLibraryElement(nodeKey.Value, documentTypeUnique))
             {
                 content = context.Content?.GetById(preview: true, nodeKey.GetValueOrDefault());
             }
@@ -682,6 +726,26 @@ namespace Umbraco.Community.BlockPreview.Controllers
             }, CacheDuration);
             scope.Complete();
             return cacheItem;
+        }
+
+        /// <summary>
+        /// Whether <paramref name="nodeKey"/> is a Library element rather than a document. A Library element is not a
+        /// page: asking the document cache for it builds an element model and throws when that can't be cast to
+        /// <see cref="IPublishedContent"/>, and there is no page to render a block against.
+        /// </summary>
+        private bool IsLibraryElement(Guid nodeKey, Guid? documentTypeUnique)
+        {
+            // Only an element type can own a Library element, so skip the lookup for ordinary documents. A block nested
+            // in an element type on a page also has an element owner type, but its nodeKey is the page's, so ask the
+            // entity service whether the key is an element. Get returns null for a key that doesn't exist yet (an unsaved
+            // page) or isn't an element; GetObjectType would throw for a missing key. The answer isn't cached: a key that
+            // isn't an element yet (an unsaved one) can become one.
+            if (nodeKey == Guid.Empty
+                || !documentTypeUnique.HasValue
+                || _contentTypeCache.Get(PublishedItemType.Content, documentTypeUnique.Value)?.IsElement != true)
+                return false;
+
+            return _entityService.Get(nodeKey, Umbraco.Cms.Core.Models.UmbracoObjectTypes.Element) != null;
         }
 
         #endregion

@@ -398,6 +398,7 @@ FodyWeavers.xsd
 
 # Claude
 .claude/settings.local.json
+.claude/worktrees/
 
 # Acceptance tests
 tests/Umbraco.Community.BlockPreview.AcceptanceTests/.env

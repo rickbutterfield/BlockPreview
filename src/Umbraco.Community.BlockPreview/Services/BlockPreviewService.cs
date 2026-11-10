@@ -98,7 +98,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="blockViewRenderer">The block view renderer.</param>
         /// <param name="blockDataConverter">The block data converter.</param>
         /// <param name="blockTypeCacheService">The block type cache service.</param>
-        [Obsolete("Use the constructor with fewer parameters. Several dependencies are no longer used.")]
+        [Obsolete("Use the constructor with fewer parameters. Several dependencies are no longer used. Scheduled for removal in v7.")]
         public BlockPreviewService(
             ITempDataProvider tempDataProvider,
             IViewComponentHelperWrapper viewComponentHelperWrapper,
@@ -135,7 +135,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockPreviewService"/> class.
         /// </summary>
-        [Obsolete("Use the constructor that accepts IPublishedModelFactory and IBlockModelFactory instead. This constructor will be removed in a future version.")]
+        [Obsolete("Use the constructor that accepts IPublishedModelFactory and IBlockModelFactory instead. Scheduled for removal in v7.")]
         public BlockPreviewService(
             ITempDataProvider tempDataProvider,
             IViewComponentHelperWrapper viewComponentHelperWrapper,
@@ -236,7 +236,6 @@ namespace Umbraco.Community.BlockPreview.Services
                 return string.Format(Constants.ErrorMessages.ErrorTemplate, Constants.ErrorMessages.InvalidBlockInstance);
 
             var layoutItems = blockValue?.BlockValue?.GetLayouts();
-            BlockGridLayoutItem? matchingLayout = GetMatchingGridLayout(layoutItems!, blockInstance);
 
             IContentType? documentType = await _blockTypeCacheService.GetContentType(documentTypeUnique);
             if (documentType == null)
@@ -270,6 +269,9 @@ namespace Umbraco.Community.BlockPreview.Services
                BlockType.BlockGrid,
                blockIndex,
                matchingBlockConfig);
+
+            // The spans fall back to the root grid's columns, so this needs the grid configuration.
+            BlockGridLayoutItem? matchingLayout = GetMatchingGridLayout(layoutItems!, blockInstance, config.GridColumns ?? 12);
 
             ConfigureBlockInstanceAreas(blockValue!, blockInstance, config, matchingBlockConfig, matchingLayout!, content);
 
@@ -493,7 +495,7 @@ namespace Umbraco.Community.BlockPreview.Services
         }
 
         /// <inheritdoc/>
-        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters.")]
+        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters. Scheduled for removal in v7.")]
         public Task<string> RenderRichTextBlock(
             string blockData,
             IPublishedContent content,
@@ -511,7 +513,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="controllerContext">The context of the controller handling the request.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the stylesheet path as a string,
         /// or <see langword="null"/> if no stylesheet is associated with the specified block type.</returns>
-        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets.")]
+        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets. Scheduled for removal in v7.")]
         public virtual async Task<string?> GetStylesheetPath(BlockType blockType, IPublishedContent content, ControllerContext controllerContext)
         {
             var paths = await GetStylesheetPaths(blockType, content, controllerContext);
@@ -579,7 +581,11 @@ namespace Umbraco.Community.BlockPreview.Services
             return string.Format(Constants.ErrorMessages.WarningTemplate, errorMessage);
         }
 
-        private BlockGridLayoutItem? GetMatchingGridLayout(IEnumerable<BlockGridLayoutItem> layoutItems, BlockGridItem? blockInstance)
+        /// <summary>
+        /// Finds the layout item for the previewed block and copies its spans onto the block. As in Umbraco's own block grid
+        /// model, a block without a stored span gets the root grid's columns (<paramref name="gridColumns"/>), at any depth.
+        /// </summary>
+        private BlockGridLayoutItem? GetMatchingGridLayout(IEnumerable<BlockGridLayoutItem> layoutItems, BlockGridItem? blockInstance, int gridColumns)
         {
             if (layoutItems == null || blockInstance == null)
                 return null;
@@ -589,7 +595,7 @@ namespace Umbraco.Community.BlockPreview.Services
                 if (layoutItem.ContentKey == blockInstance.ContentKey)
                 {
                     blockInstance.RowSpan = layoutItem.RowSpan ?? 1;
-                    blockInstance.ColumnSpan = layoutItem.ColumnSpan ?? 12;
+                    blockInstance.ColumnSpan = layoutItem.ColumnSpan ?? gridColumns;
                     return layoutItem;
                 }
                 else
@@ -600,7 +606,7 @@ namespace Umbraco.Community.BlockPreview.Services
                         {
                             if (item.ContentKey != blockInstance.ContentKey) continue;
                             blockInstance.RowSpan = item.RowSpan ?? 1;
-                            blockInstance.ColumnSpan = item.ColumnSpan ?? layoutItem.ColumnSpan ?? 12;
+                            blockInstance.ColumnSpan = item.ColumnSpan ?? gridColumns;
                             return layoutItem;
                         }
                     }
@@ -637,7 +643,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="hasNestedBlockGrid">Indicates whether the block contains a nested block grid.</param>
         /// <returns>A <see cref="ViewDataDictionary"/> containing the model and additional metadata for rendering the block
         /// preview.</returns>
-        [Obsolete("Use CreateViewDataAsync instead. This method will be removed in a future version.")]
+        [Obsolete("Use CreateViewDataAsync instead. Scheduled for removal in v7.")]
         protected virtual ViewDataDictionary CreateViewData(object? typedBlockInstance, BlockPreviewContext context, bool? hasNestedBlockGrid = false)
         {
             var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
@@ -682,8 +688,11 @@ namespace Umbraco.Community.BlockPreview.Services
             BlockGridLayoutItem layoutItem,
             IPublishedContent content)
         {
-            blockInstance.AreaGridColumns = matchingBlock.AreaGridColumns ?? 12;
-            blockInstance.GridColumns = config.GridColumns ?? 12;
+            var gridColumns = config.GridColumns ?? 12;
+            // As in Umbraco's model, AreaGridColumns stays null when the block has none configured, so Umbraco's own
+            // AreaGridColumns ?? GridColumns ?? 12 expression reaches the root grid's columns.
+            blockInstance.AreaGridColumns = matchingBlock.AreaGridColumns;
+            blockInstance.GridColumns = gridColumns;
 
             var blockConfigAreaMap = matchingBlock.Areas.ToDictionary(area => area.Key);
             if (layoutItem == null || blockConfigAreaMap == null || !blockConfigAreaMap.Any())
@@ -697,18 +706,35 @@ namespace Umbraco.Community.BlockPreview.Services
                 var items = area.Items.Select(item =>
                 {
                     BlockItemData? areaContentData = blockValue.BlockValue?.ContentData.FirstOrDefault(x => x.Key == item.ContentKey);
-                    IPublishedElement? areaContentElement = _blockDataConverter.ConvertToElement(areaContentData!, content);
 
-                    BlockItemData? areaSettingsData = blockValue.BlockValue?.SettingsData.FirstOrDefault(x => x.Key == item.ContentKey);
+                    // A layout item can outlive its content data (for example when its element type was deleted), so skip it.
+                    if (areaContentData == null)
+                        return null;
+
+                    IPublishedElement? areaContentElement = _blockDataConverter.ConvertToElement(areaContentData, content);
+
+                    // Settings data is stored under the layout item's SettingsKey, not its ContentKey.
+                    BlockItemData? areaSettingsData = item.SettingsKey.HasValue
+                        ? blockValue.BlockValue?.SettingsData.FirstOrDefault(x => x.Key == item.SettingsKey.Value)
+                        : null;
                     IPublishedElement? areaSettingsElement = areaSettingsData != null ? _blockDataConverter.ConvertToElement(areaSettingsData, content) : default;
 
                     var gridItem = new BlockGridItem(item.ContentKey, areaContentElement!, item.SettingsKey, areaSettingsElement!);
                     gridItem.RowSpan = item.RowSpan ?? 1;
-                    gridItem.ColumnSpan = item.ColumnSpan ?? areaConfig.ColumnSpan ?? 12;
+                    // As in Umbraco's model, an item without a stored span gets the root grid's columns, at any depth.
+                    gridItem.ColumnSpan = item.ColumnSpan ?? gridColumns;
+
+                    // As in Umbraco's own block grid model, an item at any depth gets the root grid's columns and the
+                    // AreaGridColumns of its own block configuration (not the outer block's).
+                    var childBlockConfig = config.Blocks.FirstOrDefault(x => x.ContentElementTypeKey == areaContentData.ContentTypeKey);
+                    gridItem.AreaGridColumns = childBlockConfig?.AreaGridColumns;
+                    gridItem.GridColumns = gridColumns;
                     return gridItem;
                 }).WhereNotNull().ToList();
 
-                return new BlockGridArea(items, areaConfig.Alias!, areaConfig.RowSpan ?? 1, areaConfig.ColumnSpan ?? 12);
+                // An area without its own span follows the block's AreaGridColumns, then the root grid's columns.
+                return new BlockGridArea(items, areaConfig.Alias!, areaConfig.RowSpan ?? 1,
+                    areaConfig.ColumnSpan ?? matchingBlock.AreaGridColumns ?? gridColumns);
             }).WhereNotNull().ToArray();
         }
 

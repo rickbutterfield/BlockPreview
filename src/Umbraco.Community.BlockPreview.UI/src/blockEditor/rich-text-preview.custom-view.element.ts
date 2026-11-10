@@ -156,6 +156,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
                                 ['Umbraco.RichText']: layouts?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? []
                             }
                         };
+                        this.setExposes(exposes);
                         if (!this._htmlMarkup && !this._isLoading) {
                             this.renderBlockPreview();
                         }
@@ -172,7 +173,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
                 nodeKey: this._blockContext.unique,
                 contentElementAlias: this._blockContext.contentElementTypeAlias,
                 documentTypeUnique: this._blockContext.documentTypeUnique,
-                culture: this._blockContext.culture
+                culture: this.previewCulture
             }
         );
     }

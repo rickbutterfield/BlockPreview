@@ -1,7 +1,7 @@
 {
   "name": "block-preview",
   "private": true,
-  "version": "6.2.0",
+  "version": "6.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,6 +28,7 @@
     "@web/test-runner-playwright": "^0.11.0",
     "glob": "^10.3.10",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "worktree-dev-port": "^0.4.1"
   }
 }
