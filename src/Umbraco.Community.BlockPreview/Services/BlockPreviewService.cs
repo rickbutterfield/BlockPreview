@@ -98,7 +98,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="blockViewRenderer">The block view renderer.</param>
         /// <param name="blockDataConverter">The block data converter.</param>
         /// <param name="blockTypeCacheService">The block type cache service.</param>
-        [Obsolete("Use the constructor with fewer parameters. Several dependencies are no longer used.")]
+        [Obsolete("Use the constructor with fewer parameters. Several dependencies are no longer used. Scheduled for removal in v7.")]
         public BlockPreviewService(
             ITempDataProvider tempDataProvider,
             IViewComponentHelperWrapper viewComponentHelperWrapper,
@@ -135,7 +135,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockPreviewService"/> class.
         /// </summary>
-        [Obsolete("Use the constructor that accepts IPublishedModelFactory and IBlockModelFactory instead. This constructor will be removed in a future version.")]
+        [Obsolete("Use the constructor that accepts IPublishedModelFactory and IBlockModelFactory instead. Scheduled for removal in v7.")]
         public BlockPreviewService(
             ITempDataProvider tempDataProvider,
             IViewComponentHelperWrapper viewComponentHelperWrapper,
@@ -493,7 +493,7 @@ namespace Umbraco.Community.BlockPreview.Services
         }
 
         /// <inheritdoc/>
-        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters.")]
+        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters. Scheduled for removal in v7.")]
         public Task<string> RenderRichTextBlock(
             string blockData,
             IPublishedContent content,
@@ -511,7 +511,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="controllerContext">The context of the controller handling the request.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the stylesheet path as a string,
         /// or <see langword="null"/> if no stylesheet is associated with the specified block type.</returns>
-        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets.")]
+        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets. Scheduled for removal in v7.")]
         public virtual async Task<string?> GetStylesheetPath(BlockType blockType, IPublishedContent content, ControllerContext controllerContext)
         {
             var paths = await GetStylesheetPaths(blockType, content, controllerContext);
@@ -637,7 +637,7 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="hasNestedBlockGrid">Indicates whether the block contains a nested block grid.</param>
         /// <returns>A <see cref="ViewDataDictionary"/> containing the model and additional metadata for rendering the block
         /// preview.</returns>
-        [Obsolete("Use CreateViewDataAsync instead. This method will be removed in a future version.")]
+        [Obsolete("Use CreateViewDataAsync instead. Scheduled for removal in v7.")]
         protected virtual ViewDataDictionary CreateViewData(object? typedBlockInstance, BlockPreviewContext context, bool? hasNestedBlockGrid = false)
         {
             var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
