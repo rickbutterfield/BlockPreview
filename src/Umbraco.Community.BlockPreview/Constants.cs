@@ -113,6 +113,16 @@
             public const string InvalidContentData = "The content data is invalid.";
 
             /// <summary>
+            /// Error message when the Library element behind an external block cannot be found.
+            /// </summary>
+            public const string ExternalElementNotFound = "The Library element used by this block could not be found.";
+
+            /// <summary>
+            /// Error message when the user may not browse the Library element behind an external block.
+            /// </summary>
+            public const string ExternalElementNotPermitted = "You do not have permission to preview the Library element used by this block.";
+
+            /// <summary>
             /// Error message for invalid block instance.
             /// </summary>
             public const string InvalidBlockInstance = "The block instance is invalid.";

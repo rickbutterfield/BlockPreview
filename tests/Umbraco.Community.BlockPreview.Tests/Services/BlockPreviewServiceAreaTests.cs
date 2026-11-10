@@ -70,7 +70,7 @@ public class BlockPreviewServiceAreaTests
             [], new BlockGridValue([layout]) { ContentData = [childData] });
 
         var converter = new Mock<IBlockDataConverter>();
-        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>(), It.IsAny<string?>()))
             .Returns(Mock.Of<IPublishedElement>());
         var service = CreateService(converter.Object);
 
@@ -111,8 +111,8 @@ public class BlockPreviewServiceAreaTests
         var contentElement = Mock.Of<IPublishedElement>();
         var settingsElement = Mock.Of<IPublishedElement>();
         var converter = new Mock<IBlockDataConverter>();
-        converter.Setup(c => c.ConvertToElement(childData, It.IsAny<IPublishedElement>())).Returns(contentElement);
-        converter.Setup(c => c.ConvertToElement(settingsData, It.IsAny<IPublishedElement>())).Returns(settingsElement);
+        converter.Setup(c => c.ConvertToElement(childData, It.IsAny<IPublishedElement>(), It.IsAny<string?>())).Returns(contentElement);
+        converter.Setup(c => c.ConvertToElement(settingsData, It.IsAny<IPublishedElement>(), It.IsAny<string?>())).Returns(settingsElement);
 
         var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
 
@@ -145,8 +145,8 @@ public class BlockPreviewServiceAreaTests
 
         // Like Umbraco's converter, this one can't take null content data.
         var converter = new Mock<IBlockDataConverter>();
-        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
-            .Returns<BlockItemData, IPublishedElement>((data, _) =>
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>(), It.IsAny<string?>()))
+            .Returns<BlockItemData, IPublishedElement, string?>((data, _, _) =>
                 data == null ? throw new ArgumentNullException(nameof(data)) : Mock.Of<IPublishedElement>());
 
         var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
@@ -171,7 +171,7 @@ public class BlockPreviewServiceAreaTests
             [], new BlockGridValue([layout]) { ContentData = [childData] });
 
         var converter = new Mock<IBlockDataConverter>();
-        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>(), It.IsAny<string?>()))
             .Returns(Mock.Of<IPublishedElement>());
         var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
 
@@ -245,7 +245,7 @@ public class BlockPreviewServiceAreaTests
 
         // It uses no state, so an uninitialized instance is enough.
         var service = (BlockPreviewService)RuntimeHelpers.GetUninitializedObject(typeof(BlockPreviewService));
-        return (BlockGridLayoutItem?)method!.Invoke(service, [layoutItems, blockInstance, gridColumns]);
+        return (BlockGridLayoutItem?)method!.Invoke(service, [layoutItems, blockInstance, gridColumns, null]);
     }
 
     // Umbraco's model gives an item without a stored span the root grid's columns at every depth, and an area without
@@ -268,7 +268,7 @@ public class BlockPreviewServiceAreaTests
             [], new BlockGridValue([layout]) { ContentData = [childData] });
 
         var converter = new Mock<IBlockDataConverter>();
-        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>(), It.IsAny<string?>()))
             .Returns(Mock.Of<IPublishedElement>());
         var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
 
@@ -326,13 +326,15 @@ public class BlockPreviewServiceAreaTests
         BlockGridConfiguration config,
         BlockGridConfiguration.BlockGridBlockConfiguration matchingBlock,
         BlockGridLayoutItem layoutItem,
-        IPublishedContent content)
+        IPublishedContent content,
+        string? owningPropertyCulture = null)
     {
         var method = typeof(BlockPreviewService).GetMethod(
-            "ConfigureBlockInstanceAreas", BindingFlags.NonPublic | BindingFlags.Instance);
+            "ConfigureBlockInstanceAreasAsync", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.That(method, Is.Not.Null,
-            "BlockPreviewService no longer has a private ConfigureBlockInstanceAreas method; update this test.");
+            "BlockPreviewService no longer has a private ConfigureBlockInstanceAreasAsync method; update this test.");
 
-        method!.Invoke(service, [blockValue, blockInstance, config, matchingBlock, layoutItem, content]);
+        ((Task)method!.Invoke(service, [blockValue, blockInstance, config, matchingBlock, layoutItem, content, owningPropertyCulture])!)
+            .GetAwaiter().GetResult();
     }
 }

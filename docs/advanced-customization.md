@@ -26,8 +26,9 @@ public class CustomBlockPreviewService : BlockPreviewService
 {
     private readonly IRazorViewEngine _razorViewEngine;
 
-    // The first nine parameters are the dependencies of the base BlockPreviewService.
+    // The first ten parameters are the dependencies of the base BlockPreviewService.
     // You must accept them and forward them to the base constructor.
+    // The constructor without IExternalElementResolver (nine parameters) is obsolete and will be removed in v9.
     // Add any dependencies of your own after them — here IRazorViewEngine, which the
     // GetViewResult override below uses to resolve a themed view.
     public CustomBlockPreviewService(
@@ -40,10 +41,11 @@ public class CustomBlockPreviewService : BlockPreviewService
         IBlockDataConverter blockDataConverter,
         IBlockTypeCacheService blockTypeCacheService,
         IBlockPreviewViewResolver viewResolver,
+        IExternalElementResolver externalElementResolver,
         IRazorViewEngine razorViewEngine)
         : base(publishedModelFactory, blockEditorConverter, options, jsonSerializer,
                blockModelFactory, blockViewRenderer, blockDataConverter,
-               blockTypeCacheService, viewResolver)
+               blockTypeCacheService, viewResolver, externalElementResolver)
     {
         _razorViewEngine = razorViewEngine;
     }

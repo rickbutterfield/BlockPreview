@@ -29,8 +29,9 @@ namespace Umbraco.Community.BlockPreview.TestSite.Services
             IBlockViewRenderer blockViewRenderer,
             IBlockDataConverter blockDataConverter,
             IBlockTypeCacheService blockTypeCacheService,
-            IBlockPreviewViewResolver viewResolver)
-        : base(publishedModelFactory, blockEditorConverter, options, jsonSerializer, blockModelFactory, blockViewRenderer, blockDataConverter, blockTypeCacheService, viewResolver)
+            IBlockPreviewViewResolver viewResolver,
+            IExternalElementResolver externalElementResolver)
+        : base(publishedModelFactory, blockEditorConverter, options, jsonSerializer, blockModelFactory, blockViewRenderer, blockDataConverter, blockTypeCacheService, viewResolver, externalElementResolver)
             => _razorViewEngine = razorViewEngine;
 
         /// <inheritdoc/>

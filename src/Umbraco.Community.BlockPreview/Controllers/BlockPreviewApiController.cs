@@ -101,6 +101,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="contentUdi">The <see cref="Cms.Core.Udi"/> that represents the content element</param>
         /// <param name="settingsUdi">The <see cref="Cms.Core.Udi"/> that represents the settings element</param>
         /// <param name="blockIndex">The <see cref="int"/> that represents the block index</param>
+        /// <param name="layoutKey">The key of the layout item to render, which tells apart instances of the same element</param>
         /// <returns>The markup to render in the preview.</returns>
         [HttpPost("preview/grid")]
         [MapToApiVersion("1.0")]
@@ -114,7 +115,8 @@ namespace Umbraco.Community.BlockPreview.Controllers
             [FromQuery] Guid documentTypeUnique = default,
             [FromQuery] string contentUdi = "",
             [FromQuery] string? settingsUdi = default,
-            [FromQuery] int? blockIndex = 0)
+            [FromQuery] int? blockIndex = 0,
+            [FromQuery] Guid? layoutKey = default)
         {
             string markup;
 
@@ -130,7 +132,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
 
-                    markup = await _blockPreviewService.RenderGridBlock(blockData, content!, ControllerContext, blockEditorAlias, documentTypeUnique, contentUdi, settingsUdi, blockIndex);
+                    markup = await _blockPreviewService.RenderGridBlock(blockData, content!, ControllerContext, BlockRenderOptionsFactory.Create(content, blockEditorAlias, currentCulture, layoutKey), blockEditorAlias, documentTypeUnique, contentUdi, settingsUdi, blockIndex);
 
                     markup = await _responseEnricher.EnrichAsync(markup, HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
                 }
@@ -162,6 +164,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="contentUdi">The <see cref="Cms.Core.Udi"/> that represents the content element</param>
         /// <param name="settingsUdi">The <see cref="Cms.Core.Udi"/> that represents the settings element</param>
         /// <param name="blockIndex">The <see cref="int"/> that represents the block index</param>
+        /// <param name="layoutKey">The key of the layout item to render, which tells apart instances of the same element</param>
         /// <returns>The markup to render in the preview.</returns>
         [HttpPost("preview/list")]
         [MapToApiVersion("1.0")]
@@ -175,7 +178,8 @@ namespace Umbraco.Community.BlockPreview.Controllers
             [FromQuery] Guid documentTypeUnique = default,
             [FromQuery] string contentUdi = "",
             [FromQuery] string? settingsUdi = default,
-            [FromQuery] int? blockIndex = 0)
+            [FromQuery] int? blockIndex = 0,
+            [FromQuery] Guid? layoutKey = default)
         {
             string markup;
 
@@ -191,7 +195,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
 
-                    markup = await _blockPreviewService.RenderListBlock(blockData, content!, ControllerContext, blockEditorAlias, documentTypeUnique, contentUdi, settingsUdi, blockIndex);
+                    markup = await _blockPreviewService.RenderListBlock(blockData, content!, ControllerContext, BlockRenderOptionsFactory.Create(content, blockEditorAlias, currentCulture, layoutKey), blockEditorAlias, documentTypeUnique, contentUdi, settingsUdi, blockIndex);
 
                     markup = await _responseEnricher.EnrichAsync(markup, HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
                 }
@@ -220,6 +224,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="contentElementAlias">The alias of the content being rendered</param>
         /// <param name="culture">The current culture</param>
         /// <param name="documentTypeUnique">The <see cref="Guid"/> that represents the Umbraco node</param>
+        /// <param name="layoutKey">The key of the layout item to render</param>
         /// <returns>The markup to render in the preview.</returns>
         [HttpPost("preview/rte")]
         [MapToApiVersion("1.0")]
@@ -230,7 +235,8 @@ namespace Umbraco.Community.BlockPreview.Controllers
             [FromQuery] string blockEditorAlias = "",
             [FromQuery] string contentElementAlias = "",
             [FromQuery] string culture = "",
-            [FromQuery] Guid documentTypeUnique = default)
+            [FromQuery] Guid documentTypeUnique = default,
+            [FromQuery] Guid? layoutKey = default)
         {
             string markup;
 
@@ -246,7 +252,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias);
 
-                    markup = await _blockPreviewService.RenderRichTextBlock(blockData, content!, ControllerContext);
+                    markup = await _blockPreviewService.RenderRichTextBlock(blockData, content!, ControllerContext, BlockRenderOptionsFactory.Create(content, blockEditorAlias, currentCulture, layoutKey));
 
                     markup = await _responseEnricher.EnrichAsync(markup, HttpContext, content, blockEditorAlias, contentElementAlias);
                 }
@@ -278,6 +284,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <param name="contentUdi">The <see cref="Cms.Core.Udi"/> that represents the content element</param>
         /// <param name="settingsUdi">The <see cref="Cms.Core.Udi"/> that represents the settings element</param>
         /// <param name="blockIndex">The <see cref="int"/> that represents the block index</param>
+        /// <param name="layoutKey">The key of the layout item to render, which tells apart instances of the same element</param>
         /// <returns>The markup to render in the preview.</returns>
         [HttpPost("preview/single")]
         [MapToApiVersion("1.0")]
@@ -291,7 +298,8 @@ namespace Umbraco.Community.BlockPreview.Controllers
             [FromQuery] Guid documentTypeUnique = default,
             [FromQuery] string contentUdi = "",
             [FromQuery] string? settingsUdi = default,
-            [FromQuery] int? blockIndex = 0)
+            [FromQuery] int? blockIndex = 0,
+            [FromQuery] Guid? layoutKey = default)
         {
             string markup;
 
@@ -307,7 +315,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
 
                     await _requestEnricher.EnrichAsync(HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
 
-                    markup = await _blockPreviewService.RenderSingleBlock(blockData, content!, ControllerContext, blockEditorAlias, documentTypeUnique, contentUdi, settingsUdi, blockIndex);
+                    markup = await _blockPreviewService.RenderSingleBlock(blockData, content!, ControllerContext, BlockRenderOptionsFactory.Create(content, blockEditorAlias, currentCulture, layoutKey), blockEditorAlias, documentTypeUnique, contentUdi, settingsUdi, blockIndex);
 
                     markup = await _responseEnricher.EnrichAsync(markup, HttpContext, content, blockEditorAlias, contentElementAlias, contentUdi, settingsUdi, blockIndex);
                 }
