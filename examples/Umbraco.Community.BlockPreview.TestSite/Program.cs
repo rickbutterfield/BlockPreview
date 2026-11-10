@@ -11,26 +11,15 @@ builder.CreateUmbracoBuilder()
     .AddComposers()
     .AddBlockPreview(options =>
     {
-        options.BlockGrid = new()
+        // This callback runs after the options are bound from configuration, so set properties on the
+        // bound sections rather than replacing them. Enabled and Stylesheets are fixed for the test site;
+        // everything else (IgnoredContentTypes, ViewLocations, ...) can still come from appsettings or
+        // environment variables.
+        foreach (var settings in new[] { options.BlockGrid, options.BlockList, options.RichText, options.SingleBlock })
         {
-            Enabled = true,
-            Stylesheets = ["/css/myblockgridlayout.css"]
-        };
-        options.BlockList = new()
-        {
-            Enabled = true,
-            Stylesheets = ["/css/myblockgridlayout.css"]
-        };
-        options.RichText = new()
-        {
-            Enabled = true,
-            Stylesheets = ["/css/myblockgridlayout.css"]
-        };
-        options.SingleBlock = new()
-        {
-            Enabled = true,
-            Stylesheets = ["/css/myblockgridlayout.css"]
-        };
+            settings.Enabled = true;
+            settings.Stylesheets = ["/css/myblockgridlayout.css"];
+        }
     })
     .Build();
 
