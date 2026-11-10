@@ -158,7 +158,8 @@ namespace Umbraco.Community.BlockPreview.Services
                 }
             }
 
-            var element = _blockEditorConverter.ConvertToElement(owner, data!, PropertyCacheLevel.None, preview: true);
+            // TODO(stopgap): null makes a culture-variant block preview in the default culture. Pass the culture the preview is rendered in (the API controller's currentCulture) once IBlockDataConverter can carry it (v19 behaviour task).
+            var element = _blockEditorConverter.ConvertToElement(owner, data!, PropertyCacheLevel.None, preview: true, owningPropertyCulture: null);
             if (element == null)
                 throw new InvalidOperationException($"Unable to find Element {data?.ContentTypeAlias}");
 

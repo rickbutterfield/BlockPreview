@@ -2,14 +2,18 @@
     <PropertyGroup>
         <IsPackable>false</IsPackable>
         <EnablePackageValidation>false</EnablePackageValidation>
+        <!-- TODO (v7): remove when CMS 19 / SDK 11 GA fixes compression of StaticAssets -->
+        <!-- Compressing all CMS static assets at build time fails on the .NET 11 RC SDK (ApplyCompressionNegotiation finds no endpoints for CMS 19.0.0-beta1 assets). -->
+        <StaticWebAssetBuildCompressAllAssets>false</StaticWebAssetBuildCompressAllAssets>
+        <StaticWebAssetPublishCompressAllAssets>false</StaticWebAssetPublishCompressAllAssets>
         <RootNamespace>Umbraco.Community.BlockPreview.TestSite</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Umbraco.Cms" VersionOverride="18.0.0" />
-        <PackageReference Include="Umbraco.Cms.Core" VersionOverride="18.0.0" />
-        <PackageReference Include="Umbraco.Cms.StaticAssets" VersionOverride="18.0.0" />
-        <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" VersionOverride="18.0.0" />
+        <PackageReference Include="Umbraco.Cms" VersionOverride="19.0.0-beta1" />
+        <PackageReference Include="Umbraco.Cms.Core" VersionOverride="19.0.0-beta1" />
+        <PackageReference Include="Umbraco.Cms.StaticAssets" VersionOverride="19.0.0-beta1" />
+        <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" VersionOverride="19.0.0-beta1" />
         <PackageReference Include="uSync" />
         <PackageReference Include="Umbraco.Community.WorktreeDevPort" />
     </ItemGroup>
@@ -19,7 +23,7 @@
     </ItemGroup>
 
     <!-- This is needed because unlike PackageReference, ProjectReference does not run the buildTransitive targets -->
-    <Import Project="..\..\src\Umbraco.Community.BlockPreview\buildTransitive\Umbraco.Community.BlockPreview.targets" />
+    <Import Project="..\..\src\Umbraco.Community.BlockPreview\buildTransitive\Umbraco.Community.BlockPreview.props" />
 
     <ItemGroup>
         <!-- Opt-in to app-local ICU to ensure consistent globalization APIs across different platforms -->

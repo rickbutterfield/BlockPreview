@@ -127,7 +127,7 @@ public class BlockDataConverterNestedTests
         return new BlockListValue(layouts)
         {
             ContentData = contentData,
-            Expose = blocks.Select(b => new BlockItemVariation(b.contentKey, null, null)).ToList()
+            Expose = blocks.Select(b => new BlockItemVariation(b.contentKey, null)).ToList()
         };
     }
 
@@ -151,7 +151,7 @@ public class BlockDataConverterNestedTests
         return new BlockGridValue(layouts)
         {
             ContentData = contentData,
-            Expose = blocks.Select(b => new BlockItemVariation(b.contentKey, null, null)).ToList()
+            Expose = blocks.Select(b => new BlockItemVariation(b.contentKey, null)).ToList()
         };
     }
 

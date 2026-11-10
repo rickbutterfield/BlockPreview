@@ -14,6 +14,8 @@
 
         <PackageIcon>icon.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <!-- SDK 11 emits buildTransitive/<id>.targets for the static web assets; a clash drops them silently. -->
+        <WarningsAsErrors>$(WarningsAsErrors);NU5118</WarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
