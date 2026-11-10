@@ -27,8 +27,8 @@ public class BlockPreviewServiceAreaTests
     // The three numbers are different on purpose (root grid 16, the outer block's areas 10, the child's own 8) so that
     // copying the outer block's value onto the child, or using the wrong grid, fails the test.
     [TestCase(8, 8, TestName = "ConfigureBlockInstanceAreas_AreaChild_GetsRootGridColumnsAndItsOwnAreaGridColumns")]
-    [TestCase(null, 12, TestName = "ConfigureBlockInstanceAreas_AreaChildWithoutAreaGridColumns_DefaultsLikeTheOuterBlock")]
-    public void ConfigureBlockInstanceAreas_AreaChild(int? childAreaGridColumns, int expectedAreaGridColumns)
+    [TestCase(null, null, TestName = "ConfigureBlockInstanceAreas_AreaChildWithoutAreaGridColumns_StaysNullLikeUmbracosModel")]
+    public void ConfigureBlockInstanceAreas_AreaChild(int? childAreaGridColumns, int? expectedAreaGridColumns)
     {
         var outerConfig = new BlockGridConfiguration.BlockGridBlockConfiguration
         {
@@ -155,6 +155,97 @@ public class BlockPreviewServiceAreaTests
             Mock.Of<IPublishedContent>());
 
         Assert.That(outer.Areas.Single().Select(x => x.ContentKey), Is.EqualTo(new[] { ChildKey }));
+    }
+
+    // Umbraco's model leaves AreaGridColumns null when the block configuration has none, and its areas.cshtml (and
+    // docs/usage.md) use AreaGridColumns ?? GridColumns ?? 12, so a default of 12 here would hide the root grid's columns
+    // on a grid that isn't 12 wide (issue #398).
+    [Test]
+    public void ConfigureBlockInstanceAreas_OuterBlockWithoutAreaGridColumns_StaysNull()
+    {
+        var (outerConfig, config) = CreateConfigurations();
+        config.GridColumns = 16;
+        var layout = CreateLayout(new BlockGridLayoutItem(ChildKey) { ColumnSpan = 12, RowSpan = 1 });
+        var childData = new BlockItemData { Key = ChildKey, ContentTypeKey = ChildTypeKey };
+        var blockValue = new BlockEditorData<BlockGridValue, BlockGridLayoutItem>(
+            [], new BlockGridValue([layout]) { ContentData = [childData] });
+
+        var converter = new Mock<IBlockDataConverter>();
+        converter.Setup(c => c.ConvertToElement(It.IsAny<BlockItemData>(), It.IsAny<IPublishedElement>()))
+            .Returns(Mock.Of<IPublishedElement>());
+        var outer = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
+
+        ConfigureBlockInstanceAreas(CreateService(converter.Object), blockValue, outer, config, outerConfig, layout,
+            Mock.Of<IPublishedContent>());
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outer.GridColumns, Is.EqualTo(16));
+            Assert.That(outer.AreaGridColumns, Is.Null);
+            Assert.That(outer.Areas.Single().Single().AreaGridColumns, Is.Null);
+        });
+    }
+
+    // Umbraco's model gives an item without a stored span the root grid's columns (layoutItem.ColumnSpan ??
+    // gridColumns ?? 12) at every depth, not a fixed 12 or its parent's span (issue #399). A stored span passes through.
+    [TestCase(null, 16, TestName = "GetMatchingGridLayout_RootBlockWithoutSpan_GetsRootGridColumns")]
+    [TestCase(6, 6, TestName = "GetMatchingGridLayout_RootBlockWithSpan_KeepsIt")]
+    public void GetMatchingGridLayout_RootBlock(int? storedSpan, int expectedSpan)
+    {
+        var layout = new BlockGridLayoutItem(OuterKey) { ColumnSpan = storedSpan, RowSpan = 2 };
+        var block = new BlockGridItem(OuterKey, Mock.Of<IPublishedElement>(), null, null);
+
+        var match = GetMatchingGridLayout([layout], block, 16);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(match, Is.SameAs(layout));
+            Assert.That(block.ColumnSpan, Is.EqualTo(expectedSpan));
+            Assert.That(block.RowSpan, Is.EqualTo(2));
+        });
+    }
+
+    [TestCase(null, 16, TestName = "GetMatchingGridLayout_AreaChildWithoutSpan_GetsRootGridColumnsNotItsParentsSpan")]
+    [TestCase(4, 4, TestName = "GetMatchingGridLayout_AreaChildWithSpan_KeepsIt")]
+    public void GetMatchingGridLayout_AreaChild(int? storedSpan, int expectedSpan)
+    {
+        var parent = new BlockGridLayoutItem(OuterKey)
+        {
+            ColumnSpan = 10,
+            RowSpan = 1,
+            Areas = [new BlockGridLayoutAreaItem(AreaKey) { Items = [new BlockGridLayoutItem(ChildKey) { ColumnSpan = storedSpan, RowSpan = 3 }] }]
+        };
+        var block = new BlockGridItem(ChildKey, Mock.Of<IPublishedElement>(), null, null);
+
+        var match = GetMatchingGridLayout([parent], block, 16);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(match, Is.SameAs(parent));
+            Assert.That(block.ColumnSpan, Is.EqualTo(expectedSpan));
+            Assert.That(block.RowSpan, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void GetMatchingGridLayout_NoMatch_ReturnsNull()
+    {
+        var block = new BlockGridItem(ChildKey, Mock.Of<IPublishedElement>(), null, null);
+
+        Assert.That(GetMatchingGridLayout([new BlockGridLayoutItem(OuterKey)], block, 16), Is.Null);
+    }
+
+    private static BlockGridLayoutItem? GetMatchingGridLayout(
+        IEnumerable<BlockGridLayoutItem> layoutItems, BlockGridItem blockInstance, int gridColumns)
+    {
+        var method = typeof(BlockPreviewService).GetMethod(
+            "GetMatchingGridLayout", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.That(method, Is.Not.Null,
+            "BlockPreviewService no longer has a private GetMatchingGridLayout method; update this test.");
+
+        // It uses no state, so an uninitialized instance is enough.
+        var service = (BlockPreviewService)RuntimeHelpers.GetUninitializedObject(typeof(BlockPreviewService));
+        return (BlockGridLayoutItem?)method!.Invoke(service, [layoutItems, blockInstance, gridColumns]);
     }
 
     private static (BlockGridConfiguration.BlockGridBlockConfiguration Outer, BlockGridConfiguration Config) CreateConfigurations()
