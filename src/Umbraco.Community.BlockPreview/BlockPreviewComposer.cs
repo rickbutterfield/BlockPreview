@@ -63,14 +63,11 @@ namespace Umbraco.Community.BlockPreview
             });
 
             builder.Services.TryAddScoped<IBlockModelFactory, BlockModelFactory>();
-            builder.Services.TryAddScoped<IBlockViewRenderer>(sp =>
-                ActivatorUtilities.CreateInstance<BlockViewRenderer>(sp));
+            builder.Services.TryAddScoped<IBlockViewRenderer, BlockViewRenderer>();
             builder.Services.TryAddScoped<IBlockDataConverter, BlockDataConverter>();
             builder.Services.TryAddScoped<IBlockTypeCacheService, BlockTypeCacheService>();
-            builder.Services.TryAddSingleton<IBlockPreviewViewResolver>(sp =>
-                ActivatorUtilities.CreateInstance<BlockPreviewViewResolver>(sp));
-            builder.Services.TryAddScoped<IBlockPreviewService>(sp =>
-                ActivatorUtilities.CreateInstance<BlockPreviewService>(sp));
+            builder.Services.TryAddSingleton<IBlockPreviewViewResolver, BlockPreviewViewResolver>();
+            builder.Services.TryAddScoped<IBlockPreviewService, BlockPreviewService>();
             builder.Services.TryAddScoped<IBlockPreviewRequestEnricher, NoopBlockPreviewRequestEnricher>();
             builder.Services.TryAddScoped<IBlockPreviewResponseEnricher, NoopBlockPreviewResponseEnricher>();
 

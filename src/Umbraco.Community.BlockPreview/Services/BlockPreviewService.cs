@@ -53,7 +53,6 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <param name="blockDataConverter">The block data converter.</param>
         /// <param name="blockTypeCacheService">The block type cache service.</param>
         /// <param name="viewResolver">The view resolver.</param>
-        [ActivatorUtilitiesConstructor]
         public BlockPreviewService(
             IPublishedModelFactory publishedModelFactory,
             BlockEditorConverter blockEditorConverter,
@@ -74,95 +73,6 @@ namespace Umbraco.Community.BlockPreview.Services
             _blockTypeCacheService = blockTypeCacheService;
             _viewResolver = viewResolver;
             _hasModelFactory = publishedModelFactory is not NoopPublishedModelFactory;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockPreviewService"/> class.
-        /// </summary>
-        /// <param name="tempDataProvider">No longer used.</param>
-        /// <param name="viewComponentHelperWrapper">No longer used.</param>
-        /// <param name="razorViewEngine">The Razor view engine.</param>
-        /// <param name="publishedModelFactory">The published model factory.</param>
-        /// <param name="blockEditorConverter">The block editor converter.</param>
-        /// <param name="viewComponentSelector">No longer used.</param>
-        /// <param name="publishedValueFallback">No longer used.</param>
-        /// <param name="options">The block preview options.</param>
-        /// <param name="jsonSerializer">The JSON serializer.</param>
-        /// <param name="contentTypeService">No longer used.</param>
-        /// <param name="dataTypeService">No longer used.</param>
-        /// <param name="appCaches">No longer used.</param>
-        /// <param name="webHostEnvironment">The web host environment.</param>
-        /// <param name="elementTypeCache">No longer used.</param>
-        /// <param name="logger">No longer used.</param>
-        /// <param name="blockModelFactory">The block model factory.</param>
-        /// <param name="blockViewRenderer">The block view renderer.</param>
-        /// <param name="blockDataConverter">The block data converter.</param>
-        /// <param name="blockTypeCacheService">The block type cache service.</param>
-        [Obsolete("Use the constructor with fewer parameters. Several dependencies are no longer used. Scheduled for removal in v7.")]
-        public BlockPreviewService(
-            ITempDataProvider tempDataProvider,
-            IViewComponentHelperWrapper viewComponentHelperWrapper,
-            IRazorViewEngine razorViewEngine,
-            IPublishedModelFactory publishedModelFactory,
-            BlockEditorConverter blockEditorConverter,
-            IViewComponentSelector viewComponentSelector,
-            IPublishedValueFallback publishedValueFallback,
-            IOptions<BlockPreviewOptions> options,
-            IJsonSerializer jsonSerializer,
-            IContentTypeService contentTypeService,
-            IDataTypeService dataTypeService,
-            AppCaches appCaches,
-            IWebHostEnvironment webHostEnvironment,
-            IBlockEditorElementTypeCache elementTypeCache,
-            ILogger<BlockPreviewService> logger,
-            IBlockModelFactory blockModelFactory,
-            IBlockViewRenderer blockViewRenderer,
-            IBlockDataConverter blockDataConverter,
-            IBlockTypeCacheService blockTypeCacheService)
-            : this(
-                publishedModelFactory,
-                blockEditorConverter,
-                options,
-                jsonSerializer,
-                blockModelFactory,
-                blockViewRenderer,
-                blockDataConverter,
-                blockTypeCacheService,
-                StaticServiceProvider.Instance.GetRequiredService<IBlockPreviewViewResolver>())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockPreviewService"/> class.
-        /// </summary>
-        [Obsolete("Use the constructor that accepts IPublishedModelFactory and IBlockModelFactory instead. Scheduled for removal in v7.")]
-        public BlockPreviewService(
-            ITempDataProvider tempDataProvider,
-            IViewComponentHelperWrapper viewComponentHelperWrapper,
-            IRazorViewEngine razorViewEngine,
-            ITypeFinder typeFinder,
-            BlockEditorConverter blockEditorConverter,
-            IViewComponentSelector viewComponentSelector,
-            IPublishedValueFallback publishedValueFallback,
-            IOptions<BlockPreviewOptions> options,
-            IJsonSerializer jsonSerializer,
-            IContentTypeService contentTypeService,
-            IDataTypeService dataTypeService,
-            AppCaches appCaches,
-            IWebHostEnvironment webHostEnvironment,
-            IBlockEditorElementTypeCache elementTypeCache,
-            ILogger<BlockPreviewService> logger)
-            : this(
-                StaticServiceProvider.Instance.GetRequiredService<IPublishedModelFactory>(),
-                blockEditorConverter,
-                options,
-                jsonSerializer,
-                StaticServiceProvider.Instance.GetRequiredService<IBlockModelFactory>(),
-                StaticServiceProvider.Instance.GetRequiredService<IBlockViewRenderer>(),
-                StaticServiceProvider.Instance.GetRequiredService<IBlockDataConverter>(),
-                StaticServiceProvider.Instance.GetRequiredService<IBlockTypeCacheService>(),
-                StaticServiceProvider.Instance.GetRequiredService<IBlockPreviewViewResolver>())
-        {
         }
 
         #region Public
@@ -494,36 +404,10 @@ namespace Umbraco.Community.BlockPreview.Services
             return await GetMarkup(previewContext);
         }
 
-        /// <inheritdoc/>
-        [Obsolete("Use the overload without blockEditorAlias and documentTypeUnique parameters. Scheduled for removal in v7.")]
-        public Task<string> RenderRichTextBlock(
-            string blockData,
-            IPublishedContent content,
-            ControllerContext controllerContext,
-            string blockEditorAlias,
-            Guid documentTypeUnique)
-            => RenderRichTextBlock(blockData, content, controllerContext);
-
-        /// <summary>
-        /// Retrieves the path to the stylesheet associated with the specified block type.
-        /// </summary>
-        /// <remarks>The method returns a stylesheet path based on the block type. This method is obsolete; use <see cref="GetStylesheetPaths"/> instead.</remarks>
-        /// <param name="blockType">The type of block for which the stylesheet path is requested.</param>
-        /// <param name="content">The content associated with the block.</param>
-        /// <param name="controllerContext">The context of the controller handling the request.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the stylesheet path as a string,
-        /// or <see langword="null"/> if no stylesheet is associated with the specified block type.</returns>
-        [Obsolete("Use GetStylesheetPaths instead to support multiple stylesheets. Scheduled for removal in v7.")]
-        public virtual async Task<string?> GetStylesheetPath(BlockType blockType, IPublishedContent content, ControllerContext controllerContext)
-        {
-            var paths = await GetStylesheetPaths(blockType, content, controllerContext);
-            return paths?.FirstOrDefault();
-        }
-
         /// <summary>
         /// Retrieves the paths to the stylesheets associated with the specified block type.
         /// </summary>
-        /// <remarks>The method returns stylesheet paths based on the block type, combining both the legacy Stylesheet property and the new Stylesheets collection.</remarks>
+        /// <remarks>The method returns stylesheet paths based on the block type, from the Stylesheets collection.</remarks>
         /// <param name="blockType">The type of block for which the stylesheet paths are requested.</param>
         /// <param name="content">The content associated with the block.</param>
         /// <param name="controllerContext">The context of the controller handling the request.</param>
@@ -545,11 +429,6 @@ namespace Umbraco.Community.BlockPreview.Services
 
             var stylesheets = new List<string>();
 
-            // Add legacy single stylesheet if specified
-#pragma warning disable CS0618 // Type or member is obsolete
-            if (!string.IsNullOrWhiteSpace(settings.Stylesheet))
-                stylesheets.Add(settings.Stylesheet);
-#pragma warning restore CS0618 // Type or member is obsolete
 
             // Add multiple stylesheets if specified
             if (settings.Stylesheets?.Any() == true)
@@ -625,26 +504,9 @@ namespace Umbraco.Community.BlockPreview.Services
         /// <returns>A task that represents the asynchronous operation. The task result contains a <see cref="ViewDataDictionary"/>
         /// containing the model and additional metadata for rendering the block preview.</returns>
         /// <remarks>
-        /// Override this method to customize the view data for block previews asynchronously.
-        /// The default implementation calls the synchronous <see cref="CreateViewData"/> method for backward compatibility.
+        /// Override this method to customize the view data for block previews.
         /// </remarks>
         protected virtual Task<ViewDataDictionary> CreateViewDataAsync(object? typedBlockInstance, BlockPreviewContext context, bool? hasNestedBlockGrid = false)
-        {
-#pragma warning disable CS0618 // Type or member is obsolete
-            return Task.FromResult(CreateViewData(typedBlockInstance, context, hasNestedBlockGrid));
-#pragma warning restore CS0618
-        }
-
-        /// <summary>
-        /// Creates and initializes a <see cref="ViewDataDictionary"/> for use in rendering a block preview.
-        /// </summary>
-        /// <param name="typedBlockInstance">The typed block instance to be set as the model in the view data. Can be <see langword="null"/>.</param>
-        /// <param name="context">The context containing information about the block being previewed.</param>
-        /// <param name="hasNestedBlockGrid">Indicates whether the block contains a nested block grid.</param>
-        /// <returns>A <see cref="ViewDataDictionary"/> containing the model and additional metadata for rendering the block
-        /// preview.</returns>
-        [Obsolete("Use CreateViewDataAsync instead. Scheduled for removal in v7.")]
-        protected virtual ViewDataDictionary CreateViewData(object? typedBlockInstance, BlockPreviewContext context, bool? hasNestedBlockGrid = false)
         {
             var viewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
             {
@@ -669,7 +531,7 @@ namespace Umbraco.Community.BlockPreview.Services
                 }
             }
 
-            return viewData;
+            return Task.FromResult(viewData);
         }
 
 

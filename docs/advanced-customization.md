@@ -12,10 +12,8 @@ For advanced scenarios, you can create a custom implementation of `IBlockPreview
 The `BlockPreviewService` provides several protected virtual methods you can override:
 
 - **`GetStylesheetPaths()`** - Dynamically determine the stylesheet paths for a block preview (returns multiple stylesheets)
-- **`GetStylesheetPath()`** - **Deprecated.** Use `GetStylesheetPaths()` instead.
 - **`GetViewResult()`** - Customize view resolution logic (e.g., theme-based views)
 - **`CreateViewDataAsync()`** - Add custom data to the ViewData dictionary passed to your views (async)
-- **`CreateViewData()`** - **Deprecated.** Use `CreateViewDataAsync()` instead.
 
 **Example: Theme-based stylesheets and view location**
 
@@ -115,7 +113,7 @@ public class CustomBlockPreviewService : BlockPreviewService
 
 **Default ViewData properties:**
 
-The base `CreateViewData()` method automatically includes the following in ViewData:
+The base `CreateViewDataAsync()` method automatically includes the following in ViewData:
 - `Model` - The strongly-typed block instance (BlockGridItem, BlockListItem, etc.)
 - `blockPreview` - Boolean flag set to `true` (useful for conditional rendering)
 - `blockIndex` - The index of the block in the list/grid

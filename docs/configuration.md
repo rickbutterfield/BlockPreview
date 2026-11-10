@@ -97,7 +97,6 @@ builder.AddBlockPreview(options =>
 | IgnoredContentTypes | string[] \| List<string> | A list of content type aliases to exclude from previews. Only applies when `ContentTypes` is not set. See [Ignoring Content Types](#ignoring-content-types) for details.                                      |
 | ViewLocations       | string[] \| List<string> | A list of custom view paths to be searched for your partial views. Use `{0}` as a placeholder for the content type alias. Custom locations are searched before default paths. Default paths are automatically included. |
 | Stylesheets         | string[] \| List<string> | Paths to stylesheets (relative to `/wwwroot`) to be loaded for every block preview of this type. For example: `["/css/grid-layout.css", "/css/custom-blocks.css"]`. Can be overridden by implementing a custom `IBlockPreviewService`. |
-| Stylesheet          | string                   | **Deprecated.** Use `Stylesheets` instead. Path to a single stylesheet (relative to `/wwwroot`). Still supported for backwards compatibility but will generate a compiler warning. |
 
 ## Ignoring Content Types
 
@@ -221,28 +220,6 @@ The preview renders your block's HTML inside the backoffice, in a column that is
 To keep the preview consistent with the live site you can:
 - **Use container queries.** Give a wrapper element in your block's view `container-type: inline-size`, and write the layout rules inside it with `@container`, so they follow the width of the space the block is actually in.
 - **Loosen the limits for the preview only.** Stylesheets listed in `Stylesheets` are applied in the order they are listed, and only in block previews. A small extra stylesheet listed after your site's styles can reset `max-height` and `overflow` for blocks in the preview. Alternatively, add a class in your view when `Context.Request.IsBlockPreviewRequest()` is true (see the [Usage Guide](usage.md)) and target that class from your stylesheet.
-
-### Migrating from Stylesheet (deprecated)
-
-The single `Stylesheet` property is deprecated. Migrate to `Stylesheets`:
-
-```cs
-// Before (deprecated - generates compiler warning)
-options.BlockGrid = new()
-{
-    Enabled = true,
-    Stylesheet = "/css/myblockgridlayout.css"
-};
-
-// After (recommended)
-options.BlockGrid = new()
-{
-    Enabled = true,
-    Stylesheets = ["/css/myblockgridlayout.css"]
-};
-```
-
-> **Note:** The deprecated `Stylesheet` property still works for backwards compatibility. If both `Stylesheet` and `Stylesheets` are configured, all stylesheets are combined (with duplicates removed).
 
 ## Razor Class Library (RCL) Support
 

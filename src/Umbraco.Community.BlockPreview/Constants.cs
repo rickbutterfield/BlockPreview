@@ -169,12 +169,6 @@
             public const string GeneratedModels = "BlockPreview_GeneratedModels";
             
             /// <summary>
-            /// Cache key template for block type.
-            /// </summary>
-            [Obsolete("No longer used. Block types are now resolved via IPublishedModelFactory. Scheduled for removal in v7.")]
-            public const string BlockType = "BlockPreview_BlockType_{0}";
-
-            /// <summary>
             /// Cache key template for content type.
             /// </summary>
             public const string ContentType = "BlockPreview_ContentType_{0}";

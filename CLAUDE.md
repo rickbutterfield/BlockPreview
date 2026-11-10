@@ -157,7 +157,7 @@ public MyService(IDependencyA depA, IDependencyB depB) { ... }
 ```
 
 - DI must use the **new** constructor. Microsoft DI picks the longest constructor it can satisfy, which is often the obsolete one. So mark the new constructor `[ActivatorUtilitiesConstructor]` and register the service with `ActivatorUtilities.CreateInstance<T>(sp)`.
-- Examples: `BlockPreviewApiController` (added `IBlockPreviewResponseEnricher`) and `BlockPreviewViewResolver` (dropped `IWebHostEnvironment`).
+- Examples: none in the current code. The v6 examples (`BlockPreviewApiController` adding `IBlockPreviewResponseEnricher`, `BlockPreviewViewResolver` dropping `IWebHostEnvironment`) were removed in v7.
 
 ### Obsolete method + new overload
 When a public method's signature needs to change, add the new overload and mark the old one `[Obsolete]`. The old one should call the new one with sensible defaults, and nothing in this repo should still call the obsolete one.
@@ -168,7 +168,7 @@ When adding a member to a public interface, give it a default implementation so 
 2. Return a sensible default, such as an empty collection or `null`.
 3. Throw `NotImplementedException`, if there's no reasonable default.
 
-Add `// TODO (v{X+1}): Remove the default implementation.` above it. Examples: `IBlockPreviewService.RenderSingleBlock` (falls back to `RenderListBlock`) and `IBlockPreviewService.GetStylesheetPaths` (wraps `GetStylesheetPath`).
+Add `// TODO (v{X+1}): Remove the default implementation.` above it. Example: `IBlockPreviewService.RenderSingleBlock` (falls back to `RenderListBlock`).
 
 ### General rules
 - Anything marked `[Obsolete]` stays for at least one full major version: if it's obsoleted in vN, the earliest it can be removed is vN+2. Every `[Obsolete]` message ends with `Scheduled for removal in v{N+2}.`, where N is the major version in `version.json`.

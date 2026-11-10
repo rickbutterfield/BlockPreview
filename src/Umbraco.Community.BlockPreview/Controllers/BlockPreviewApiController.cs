@@ -53,7 +53,6 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockPreviewApiController"/> class.
         /// </summary>
-        [ActivatorUtilitiesConstructor]
         public BlockPreviewApiController(
             IPublishedRouter publishedRouter,
             ILogger<BlockPreviewApiController> logger,
@@ -87,85 +86,6 @@ namespace Umbraco.Community.BlockPreview.Controllers
             _requestEnricher = requestEnricher;
             _responseEnricher = responseEnricher;
             _entityService = entityService;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockPreviewApiController"/> class.
-        /// </summary>
-        [Obsolete("Use the constructor with IEntityService parameter instead. Scheduled for removal in v7.")]
-        public BlockPreviewApiController(
-            IPublishedRouter publishedRouter,
-            ILogger<BlockPreviewApiController> logger,
-            IUmbracoContextAccessor umbracoContextAccessor,
-            ContextCultureService contextCultureSwitcher,
-            IBlockPreviewService blockPreviewService,
-            ILanguageService languageService,
-            IOptions<BlockPreviewOptions> blockPreviewSettings,
-            ITypeFinder typeFinder,
-            AppCaches appCaches,
-            IElementsCache elementsCache,
-            IDocumentCacheService documentCacheService,
-            IPublishedContentTypeCache contentTypeCache,
-            IScopeProvider scopeProvider,
-            IBlockPreviewRequestEnricher requestEnricher,
-            IBlockPreviewResponseEnricher responseEnricher)
-            : this(
-                publishedRouter,
-                logger,
-                umbracoContextAccessor,
-                contextCultureSwitcher,
-                blockPreviewService,
-                languageService,
-                blockPreviewSettings,
-                typeFinder,
-                appCaches,
-                elementsCache,
-                documentCacheService,
-                contentTypeCache,
-                scopeProvider,
-                requestEnricher,
-                responseEnricher,
-                StaticServiceProvider.Instance.GetRequiredService<IEntityService>())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockPreviewApiController"/> class.
-        /// </summary>
-        [Obsolete("Use the constructor with IBlockPreviewResponseEnricher parameter instead. Scheduled for removal in v7.")]
-        public BlockPreviewApiController(
-            IPublishedRouter publishedRouter,
-            ILogger<BlockPreviewApiController> logger,
-            IUmbracoContextAccessor umbracoContextAccessor,
-            ContextCultureService contextCultureSwitcher,
-            IBlockPreviewService blockPreviewService,
-            ILanguageService languageService,
-            IOptions<BlockPreviewOptions> blockPreviewSettings,
-            ITypeFinder typeFinder,
-            AppCaches appCaches,
-            IElementsCache elementsCache,
-            IDocumentCacheService documentCacheService,
-            IPublishedContentTypeCache contentTypeCache,
-            IScopeProvider scopeProvider,
-            IBlockPreviewRequestEnricher requestEnricher)
-            : this(
-                publishedRouter,
-                logger,
-                umbracoContextAccessor,
-                contextCultureSwitcher,
-                blockPreviewService,
-                languageService,
-                blockPreviewSettings,
-                typeFinder,
-                appCaches,
-                elementsCache,
-                documentCacheService,
-                contentTypeCache,
-                scopeProvider,
-                requestEnricher,
-                StaticServiceProvider.Instance.GetRequiredService<IBlockPreviewResponseEnricher>(),
-                StaticServiceProvider.Instance.GetRequiredService<IEntityService>())
-        {
         }
 
         #region Public
@@ -485,41 +405,10 @@ namespace Umbraco.Community.BlockPreview.Controllers
                     .Except(original.IgnoredContentTypes, StringComparer.OrdinalIgnoreCase)
                     .ToList(),
                 IgnoredContentTypes = original.IgnoredContentTypes,
-#pragma warning disable CS0618 // Type or member is obsolete
-                Stylesheet = original.Stylesheet,
-#pragma warning restore CS0618 // Type or member is obsolete
                 Stylesheets = original.Stylesheets
             };
         }
 
-
-        /// <summary>
-        /// Retrieves the stylesheet path for a grid block preview.
-        /// </summary>
-        /// <param name="nodeKey">The key of the node.</param>
-        /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetGridStylesheets instead to support multiple stylesheets. Scheduled for removal in v7.")]
-        [HttpGet("preview/grid/stylesheet")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
-        public async Task<IActionResult> GetGridStylesheet(
-            [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default)
-        {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
-
-            await _requestEnricher.EnrichAsync(HttpContext, content);
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            String? stylesheetPath = await _blockPreviewService.GetStylesheetPath(BlockType.BlockGrid, content!, ControllerContext);
-#pragma warning restore CS0618 // Type or member is obsolete
-
-            if (string.IsNullOrWhiteSpace(stylesheetPath))
-            {
-                return Ok(string.Empty);
-            }
-            return Ok(stylesheetPath);
-        }
 
         /// <summary>
         /// Retrieves the stylesheet paths for a grid block preview.
@@ -543,34 +432,6 @@ namespace Umbraco.Community.BlockPreview.Controllers
         }
 
         /// <summary>
-        /// Retrieves the stylesheet path for a list block preview.
-        /// </summary>
-        /// <param name="nodeKey">The key of the node.</param>
-        /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetListStylesheets instead to support multiple stylesheets. Scheduled for removal in v7.")]
-        [HttpGet("preview/list/stylesheet")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
-        public async Task<IActionResult> GetListStylesheet(
-            [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default)
-        {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
-
-            await _requestEnricher.EnrichAsync(HttpContext, content);
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            String? stylesheetPath = await _blockPreviewService.GetStylesheetPath(BlockType.BlockList, content!, ControllerContext);
-#pragma warning restore CS0618 // Type or member is obsolete
-
-            if (string.IsNullOrWhiteSpace(stylesheetPath))
-            {
-                return Ok(string.Empty);
-            }
-            return Ok(stylesheetPath);
-        }
-
-        /// <summary>
         /// Retrieves the stylesheet paths for a list block preview.
         /// </summary>
         /// <param name="nodeKey">The key of the node.</param>
@@ -589,34 +450,6 @@ namespace Umbraco.Community.BlockPreview.Controllers
             var stylesheetPaths = await _blockPreviewService.GetStylesheetPaths(BlockType.BlockList, content!, ControllerContext);
 
             return Ok(stylesheetPaths);
-        }
-
-        /// <summary>
-        /// Retrieves the stylesheet path for a rich text block preview.
-        /// </summary>
-        /// <param name="nodeKey">The key of the node.</param>
-        /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <returns>The stylesheet path if configured; otherwise, a 404 response.</returns>
-        [Obsolete("Use GetRteStylesheets instead to support multiple stylesheets. Scheduled for removal in v7.")]
-        [HttpGet("preview/rte/stylesheet")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
-        public async Task<IActionResult> GetRteStylesheet(
-            [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default)
-        {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
-
-            await _requestEnricher.EnrichAsync(HttpContext, content);
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            String? stylesheetPath = await _blockPreviewService.GetStylesheetPath(BlockType.RichText, content!, ControllerContext);
-#pragma warning restore CS0618 // Type or member is obsolete
-
-            if (string.IsNullOrWhiteSpace(stylesheetPath))
-            {
-                return Ok(string.Empty);
-            }
-            return Ok(stylesheetPath);
         }
 
         /// <summary>

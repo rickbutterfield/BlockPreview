@@ -16,7 +16,6 @@ export type BlockTypeSettings = {
     viewLocations?: null | Array<string>;
     contentTypes?: null | Array<string>;
     ignoredContentTypes: Array<string>;
-    stylesheet?: null | string;
     stylesheets?: null | Array<string>;
 };
 
@@ -44,25 +43,6 @@ export type PreviewGridBlockResponses = {
 };
 
 export type PreviewGridBlockResponse = PreviewGridBlockResponses[keyof PreviewGridBlockResponses];
-
-export type GetGridStylesheetData = {
-    body?: never;
-    path?: never;
-    query?: {
-        nodeKey?: string;
-        documentTypeUnique?: string;
-    };
-    url: '/umbraco/block-preview/api/v1/preview/grid/stylesheet';
-};
-
-export type GetGridStylesheetResponses = {
-    /**
-     * OK
-     */
-    200: string;
-};
-
-export type GetGridStylesheetResponse = GetGridStylesheetResponses[keyof GetGridStylesheetResponses];
 
 export type GetGridStylesheetsData = {
     body?: never;
@@ -108,25 +88,6 @@ export type PreviewListBlockResponses = {
 
 export type PreviewListBlockResponse = PreviewListBlockResponses[keyof PreviewListBlockResponses];
 
-export type GetListStylesheetData = {
-    body?: never;
-    path?: never;
-    query?: {
-        nodeKey?: string;
-        documentTypeUnique?: string;
-    };
-    url: '/umbraco/block-preview/api/v1/preview/list/stylesheet';
-};
-
-export type GetListStylesheetResponses = {
-    /**
-     * OK
-     */
-    200: string;
-};
-
-export type GetListStylesheetResponse = GetListStylesheetResponses[keyof GetListStylesheetResponses];
-
 export type GetListStylesheetsData = {
     body?: never;
     path?: never;
@@ -167,25 +128,6 @@ export type PreviewRichTextMarkupResponses = {
 };
 
 export type PreviewRichTextMarkupResponse = PreviewRichTextMarkupResponses[keyof PreviewRichTextMarkupResponses];
-
-export type GetRteStylesheetData = {
-    body?: never;
-    path?: never;
-    query?: {
-        nodeKey?: string;
-        documentTypeUnique?: string;
-    };
-    url: '/umbraco/block-preview/api/v1/preview/rte/stylesheet';
-};
-
-export type GetRteStylesheetResponses = {
-    /**
-     * OK
-     */
-    200: string;
-};
-
-export type GetRteStylesheetResponse = GetRteStylesheetResponses[keyof GetRteStylesheetResponses];
 
 export type GetRteStylesheetsData = {
     body?: never;

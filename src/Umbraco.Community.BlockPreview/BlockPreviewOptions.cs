@@ -140,15 +140,6 @@ namespace Umbraco.Community.BlockPreview
         public List<string> IgnoredContentTypes { get; set; } = [];
 
         /// <summary>
-        /// Gets or sets a single stylesheet for this block type.
-        /// </summary>
-        /// <remarks>
-        /// This property is obsolete. Use <see cref="Stylesheets"/> instead to specify one or more stylesheets.
-        /// </remarks>
-        [Obsolete("Use Stylesheets instead to specify one or more stylesheets. Scheduled for removal in v7.")]
-        public string? Stylesheet { get; set; }
-
-        /// <summary>
         /// Gets or sets the stylesheets for this block type.
         /// </summary>
         public List<string>? Stylesheets { get; set; } = [];
