@@ -698,9 +698,17 @@ namespace Umbraco.Community.BlockPreview.Services
                 var items = area.Items.Select(item =>
                 {
                     BlockItemData? areaContentData = blockValue.BlockValue?.ContentData.FirstOrDefault(x => x.Key == item.ContentKey);
-                    IPublishedElement? areaContentElement = _blockDataConverter.ConvertToElement(areaContentData!, content);
 
-                    BlockItemData? areaSettingsData = blockValue.BlockValue?.SettingsData.FirstOrDefault(x => x.Key == item.ContentKey);
+                    // A layout item can outlive its content data (for example when its element type was deleted), so skip it.
+                    if (areaContentData == null)
+                        return null;
+
+                    IPublishedElement? areaContentElement = _blockDataConverter.ConvertToElement(areaContentData, content);
+
+                    // Settings data is stored under the layout item's SettingsKey, not its ContentKey.
+                    BlockItemData? areaSettingsData = item.SettingsKey.HasValue
+                        ? blockValue.BlockValue?.SettingsData.FirstOrDefault(x => x.Key == item.SettingsKey.Value)
+                        : null;
                     IPublishedElement? areaSettingsElement = areaSettingsData != null ? _blockDataConverter.ConvertToElement(areaSettingsData, content) : default;
 
                     var gridItem = new BlockGridItem(item.ContentKey, areaContentElement!, item.SettingsKey, areaSettingsElement!);
@@ -709,7 +717,7 @@ namespace Umbraco.Community.BlockPreview.Services
 
                     // As in Umbraco's own block grid model, an item at any depth gets the root grid's columns and the
                     // AreaGridColumns of its own block configuration (not the outer block's).
-                    var childBlockConfig = config.Blocks.FirstOrDefault(x => x.ContentElementTypeKey == areaContentData?.ContentTypeKey);
+                    var childBlockConfig = config.Blocks.FirstOrDefault(x => x.ContentElementTypeKey == areaContentData.ContentTypeKey);
                     gridItem.AreaGridColumns = childBlockConfig?.AreaGridColumns ?? 12;
                     gridItem.GridColumns = gridColumns;
                     return gridItem;
