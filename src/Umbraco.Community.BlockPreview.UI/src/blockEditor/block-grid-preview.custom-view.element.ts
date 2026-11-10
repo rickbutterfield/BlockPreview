@@ -174,6 +174,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                             expose: exposes ?? [],
                             layout: { ['Umbraco.BlockGrid']: this.#filterLayouts() }
                         };
+                        this.setExposes(exposes);
                         this._blockContext.blockIndex = (contents ?? []).findIndex(x => x.key === this._blockContext.contentUdi);
                         if (!this._htmlMarkup && !this._isLoading) {
                             // Render straight away, even when the block has areas whose
@@ -226,7 +227,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 contentUdi: this._blockContext.contentUdi,
                 settingsUdi: this._blockContext.settingsUdi,
-                culture: this._blockContext.culture,
+                culture: this.previewCulture,
                 blockIndex: this._blockContext.blockIndex
             }
         );

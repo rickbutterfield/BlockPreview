@@ -148,6 +148,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
                             }
                         };
 
+                        this.setExposes(exposes);
                         this._blockContext.blockIndex = contents?.indexOf(this.blockListValue.contentData[0]);
                         if (!this._htmlMarkup && !this._isLoading) {
                             this.renderBlockPreview();
@@ -168,7 +169,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
                 documentTypeUnique: this._blockContext.documentTypeUnique,
                 contentUdi: this._blockContext.contentUdi,
                 settingsUdi: this._blockContext.settingsUdi,
-                culture: this._blockContext.culture,
+                culture: this.previewCulture,
                 blockIndex: this._blockContext.blockIndex,
             }
         );
