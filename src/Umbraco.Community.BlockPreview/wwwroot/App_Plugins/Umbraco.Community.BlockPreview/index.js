@@ -12,8 +12,8 @@ import { observeMultiple as _, UmbStringState as Oe } from "@umbraco-cms/backoff
 import { UMB_BLOCK_LIST_ENTRY_CONTEXT as mt, UMB_BLOCK_LIST_MANAGER_CONTEXT as gt } from "@umbraco-cms/backoffice/block-list";
 import { UMB_BLOCK_SINGLE_ENTRY_CONTEXT as xt, UMB_BLOCK_SINGLE_MANAGER_CONTEXT as Tt } from "@umbraco-cms/backoffice/block-single";
 import { UMB_BLOCK_RTE_ENTRY_CONTEXT as St, UMB_BLOCK_RTE_MANAGER_CONTEXT as Et } from "@umbraco-cms/backoffice/block-rte";
-import { UMB_DOCUMENT_WORKSPACE_CONTEXT as Pt } from "@umbraco-cms/backoffice/document";
-const Ut = {
+import { UMB_DOCUMENT_WORKSPACE_CONTEXT as Ut } from "@umbraco-cms/backoffice/document";
+const Pt = {
   bodySerializer: (t) => JSON.stringify(
     t,
     (e, i) => typeof i == "bigint" ? i.toString() : i
@@ -35,21 +35,21 @@ const Ut = {
   const x = l ?? ((h) => new Promise((y) => setTimeout(y, h)));
   return { stream: async function* () {
     let h = o ?? 3e3, y = 0;
-    const P = c.signal ?? new AbortController().signal;
-    for (; !P.aborted; ) {
+    const U = c.signal ?? new AbortController().signal;
+    for (; !U.aborted; ) {
       y++;
       const $ = c.headers instanceof Headers ? c.headers : new Headers(c.headers);
       d !== void 0 && $.set("Last-Event-ID", d);
       try {
-        const U = {
+        const P = {
           redirect: "follow",
           ...c,
           body: c.serializedBody,
           headers: $,
-          signal: P
+          signal: U
         };
-        let v = new Request(u, U);
-        t && (v = await t(u, U));
+        let v = new Request(u, P);
+        t && (v = await t(u, P));
         const f = await (c.fetch ?? globalThis.fetch)(v);
         if (!f.ok)
           throw new Error(
@@ -64,7 +64,7 @@ const Ut = {
           } catch {
           }
         };
-        P.addEventListener("abort", Se);
+        U.addEventListener("abort", Se);
         try {
           for (; ; ) {
             const { done: lt, value: ut } = await m.read();
@@ -77,12 +77,12 @@ const Ut = {
             for (const ht of Ee) {
               const dt = ht.split(`
 `), H = [];
-              let Pe;
+              let Ue;
               for (const C of dt)
                 if (C.startsWith("data:"))
                   H.push(C.replace(/^data:\s*/, ""));
                 else if (C.startsWith("event:"))
-                  Pe = C.replace(/^event:\s*/, "");
+                  Ue = C.replace(/^event:\s*/, "");
                 else if (C.startsWith("id:"))
                   d = C.replace(/^id:\s*/, "");
                 else if (C.startsWith("retry:")) {
@@ -92,30 +92,30 @@ const Ut = {
                   );
                   Number.isNaN(Ae) || (h = Ae);
                 }
-              let A, Ue = !1;
+              let A, Pe = !1;
               if (H.length) {
                 const C = H.join(`
 `);
                 try {
-                  A = JSON.parse(C), Ue = !0;
+                  A = JSON.parse(C), Pe = !0;
                 } catch {
                   A = C;
                 }
               }
-              Ue && (r && await r(A), s && (A = await s(A))), i?.({
+              Pe && (r && await r(A), s && (A = await s(A))), i?.({
                 data: A,
-                event: Pe,
+                event: Ue,
                 id: d,
                 retry: h
               }), H.length && (yield A);
             }
           }
         } finally {
-          P.removeEventListener("abort", Se), m.releaseLock();
+          U.removeEventListener("abort", Se), m.releaseLock();
         }
         break;
-      } catch (U) {
-        if (e?.(U), n !== void 0 && y >= n)
+      } catch (P) {
+        if (e?.(P), n !== void 0 && y >= n)
           break;
         const v = Math.min(
           h * 2 ** (y - 1),
@@ -461,7 +461,7 @@ const Wt = () => ({
 }), Gt = {
   "Content-Type": "application/json"
 }, Xe = (t = {}) => ({
-  ...Ut,
+  ...Pt,
   headers: Gt,
   parseAs: "auto",
   querySerializer: zt,
@@ -545,16 +545,16 @@ const Wt = () => ({
         ...y
       };
     }
-    const P = await h.text();
+    const U = await h.text();
     let $;
     try {
-      $ = JSON.parse(P);
+      $ = JSON.parse(U);
     } catch {
     }
-    const U = $ ?? P;
-    let v = U;
+    const P = $ ?? U;
+    let v = P;
     for (const b of r.error.fns)
-      b && (v = await b(U, h, T, c));
+      b && (v = await b(P, h, T, c));
     if (v = v || {}, c.throwOnError)
       throw v;
     return c.responseStyle === "data" ? void 0 : {
@@ -1173,8 +1173,10 @@ oe = function() {
       })),
       columnSpan: this._blockContext.layout?.columnSpan ?? 0,
       rowSpan: this._blockContext.layout?.rowSpan ?? 0,
-      contentKey: this._blockContext.layout?.contentKey ?? "",
-      settingsKey: this._blockContext.layout?.settingsKey
+      // A new block renders before its layout entry arrives (#322), so fall back to the
+      // entry's own keys: an empty contentKey can't be read as a Guid on the server.
+      contentKey: this._blockContext.layout?.contentKey || this._blockContext.contentUdi,
+      settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || void 0
     }
   ];
 };
@@ -1589,7 +1591,7 @@ W = /* @__PURE__ */ new WeakMap();
 se = /* @__PURE__ */ new WeakSet();
 at = function() {
   try {
-    this.consumeContext(Pt, (t) => {
+    this.consumeContext(Ut, (t) => {
       t && (this._workspaceContextResolved = !0, this.observe(
         _([t.unique, t.contentTypeUnique]),
         async ([e, i]) => {
