@@ -344,31 +344,30 @@ const Nt = async (t, e) => {
     if (e.startsWith("text/"))
       return "text";
   }
-}, Wt = (t, e) => e ? !!(t.headers.has(e) || t.query?.[e] || t.headers.get("Cookie")?.includes(`${e}=`)) : !1, zt = async ({
-  security: t,
-  ...e
-}) => {
-  for (const s of t) {
-    if (Wt(e, s.name))
+}, Wt = (t, e) => e ? !!(t.headers.has(e) || t.query?.[e] || t.headers.get("Cookie")?.includes(`${e}=`)) : !1;
+async function zt(t) {
+  for (const e of t.security ?? []) {
+    if (Wt(t, e.name))
       continue;
-    const o = await Nt(s, e.auth);
-    if (!o)
+    const s = await Nt(e, t.auth);
+    if (!s)
       continue;
-    const i = s.name ?? "Authorization";
-    switch (s.in) {
+    const o = e.name ?? "Authorization";
+    switch (e.in) {
       case "query":
-        e.query || (e.query = {}), e.query[i] = o;
+        t.query || (t.query = {}), t.query[o] = s;
         break;
       case "cookie":
-        e.headers.append("Cookie", `${i}=${o}`);
+        t.headers.append("Cookie", `${o}=${s}`);
         break;
       case "header":
       default:
-        e.headers.set(i, o);
+        t.headers.set(o, s);
         break;
     }
   }
-}, $e = (t) => Rt({
+}
+const $e = (t) => Rt({
   baseUrl: t.baseUrl,
   path: t.path,
   query: t.query,
@@ -459,10 +458,7 @@ const jt = () => ({
       headers: Qe(e.headers, u.headers),
       serializedBody: void 0
     };
-    c.security && await zt({
-      ...c,
-      security: c.security
-    }), c.requestValidator && await c.requestValidator(c), c.body !== void 0 && c.bodySerializer && (c.serializedBody = c.bodySerializer(c.body)), (c.body === void 0 || c.serializedBody === "") && c.headers.delete("Content-Type");
+    c.security && await zt(c), c.requestValidator && await c.requestValidator(c), c.body !== void 0 && c.bodySerializer && (c.serializedBody = c.bodySerializer(c.body)), (c.body === void 0 || c.serializedBody === "") && c.headers.delete("Content-Type");
     const b = c, C = $e(b);
     return { opts: b, url: C };
   }, r = async (u) => {
