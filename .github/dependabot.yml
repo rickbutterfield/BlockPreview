@@ -1,7 +1,10 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
+# Dependabot version updates. See:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# The CMS packages and everything the backoffice provides at runtime move with the
+# supported Umbraco version, never on their own, so they are ignored here. The first
+# entry has no target-branch (the repository's default branch); the v7 entries below
+# target v7/dev (Umbraco 19).
 
 version: 2
 updates:
@@ -9,3 +12,37 @@ updates:
     directory: "/src/Umbraco.Community.BlockPreview/" # Location of package manifests
     schedule:
       interval: "weekly"
+
+  # v7 line (Umbraco 19).
+  - package-ecosystem: "nuget"
+    directory: "/"
+    target-branch: "v7/dev"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "Umbraco.Cms*"
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+
+  - package-ecosystem: "npm"
+    directory: "/src/Umbraco.Community.BlockPreview.UI"
+    target-branch: "v7/dev"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Locked to the backoffice release the package targets (its peer dependencies).
+      - dependency-name: "@umbraco-cms/backoffice"
+      - dependency-name: "@hey-api/openapi-ts"
+      - dependency-name: "@umbraco-ui/uui"
+      - dependency-name: "lit"
+      - dependency-name: "rxjs"
+      - dependency-name: "uuid"
+      - dependency-name: "dompurify"
+      - dependency-name: "diff"
+      - dependency-name: "luxon"
+      - dependency-name: "marked"
+      - dependency-name: "monaco-editor"
+      - dependency-name: "@microsoft/signalr"
+      - dependency-name: "@tiptap/*"
+      - dependency-name: "@heximal/expressions"
+      - dependency-name: "element-internals-polyfill"
+      - dependency-name: "@types/diff"

@@ -1,5 +1,8 @@
 # Configuration
 
+> [!NOTE]
+> BlockPreview 7.x requires Umbraco 19 and .NET 11 (7.0.0 is a pre-release). The `Stylesheet` (singular) setting and the `preview/{grid|list|rte}/stylesheet` endpoints from 5.x/6.x are gone; use `Stylesheets`.
+
 ## Options
 The following options can be configured, either in `.AddBlockPreview()` or `appsettings.json`:
 

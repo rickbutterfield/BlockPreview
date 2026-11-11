@@ -7,6 +7,9 @@ For advanced scenarios, you can create a custom implementation of `IBlockPreview
 - Custom rendering logic
 - Custom ViewData passed to your views
 
+> [!NOTE]
+> In 7.x the `BlockPreviewService` constructor takes an `IExternalElementResolver` (ten parameters). The nine-parameter constructor is obsolete and will be removed in v9. The obsolete constructors that were scheduled for removal in v7 (including the `ITypeFinder` one), `GetStylesheetPath(...)` and `CreateViewData(...)` have been removed: use `GetStylesheetPaths()` and `CreateViewDataAsync()`.
+
 ### Overridable Methods
 
 The `BlockPreviewService` provides several protected virtual methods you can override:
@@ -118,7 +121,7 @@ public class CustomBlockPreviewService : BlockPreviewService
 The base `CreateViewDataAsync()` method automatically includes the following in ViewData:
 - `Model` - The strongly-typed block instance (BlockGridItem, BlockListItem, etc.)
 - `blockPreview` - Boolean flag set to `true` (useful for conditional rendering)
-- `blockIndex` - The index of the block in the list/grid
+- `blockIndex` - The position of the block in its layout (for a Block Grid area child, its place within the area)
 - `blockGridPreview` - Boolean flag set to `true` for Block Grid blocks
 - `matchingBlockConfig` - Block Grid configuration (only for blocks with areas)
 
@@ -134,6 +137,14 @@ You can access custom ViewData in your Razor views:
     <!-- Your block markup -->
 </div>
 ```
+
+### Render options
+`IBlockPreviewService` has overloads of `RenderGridBlock`, `RenderListBlock`, `RenderSingleBlock` and `RenderRichTextBlock` that take a `BlockRenderOptions` after the `controllerContext`:
+
+- `LayoutKey` - the key of the layout item (`IBlockLayoutItem.Key`) being rendered. The same content key can appear several times in one layout (a Library element used twice), so only this identifies the instance. When `null`, the first layout item with the content key is used.
+- `OwningPropertyCulture` - the culture of the stored property value the block belongs to, or `null` when the property does not vary by culture. It has the same meaning as the parameter of the same name on Umbraco's `BlockEditorConverter.ConvertToElement`.
+
+The controller calls these overloads. The overloads have default implementations that ignore the options and call the older ones, so a custom `IBlockPreviewService` must implement the overloads to get layout-key and culture handling. A call that passes a literal `null` as the fourth argument is ambiguous; pass `blockEditorAlias: null` or name the argument.
 
 Register your custom service in `Program.cs`:
 ```cs
@@ -209,7 +220,7 @@ builder.Services.AddUnique<IBlockPreviewRequestEnricher, BlockPreviewRequestEnri
 - `contentElementAlias` - The content type alias of the block element
 - `contentUdi` - The UDI of the content element
 - `settingsUdi` - The UDI of the settings element (if applicable)
-- `blockIndex` - The index of the block in the list/grid (if applicable)
+- `blockIndex` - The position of the block in its layout (if applicable)
 
 ## Response Enricher
 The `IBlockPreviewResponseEnricher` interface allows you to modify the rendered preview markup, before they are sent to the backoffice. This is useful for:
@@ -263,7 +274,7 @@ builder.Services.AddUnique<IBlockPreviewResponseEnricher, BlockPreviewResponseEn
 - `contentElementAlias` - The content type alias of the block element
 - `contentUdi` - The UDI of the content element
 - `settingsUdi` - The UDI of the settings element (if applicable)
-- `blockIndex` - The index of the block in the list/grid (if applicable)
+- `blockIndex` - The position of the block in its layout (if applicable)
 
 ## Registering from a composer
 You can also register a custom service or enricher from your own `IComposer`. BlockPreview only registers its defaults when nothing else has been registered for that interface, so your registration wins whether your composer runs before or after BlockPreview's:
@@ -280,13 +291,14 @@ public class BlockPreviewCustomisationComposer : IComposer
 
 ## Replaceable Services
 
-BlockPreview's internal rendering pipeline is split into three focused services that can each be replaced independently. All three are registered as scoped services (per-request), so you can safely inject other scoped services like `IPublishedContentQuery` or access `HttpContext`.
+BlockPreview's internal rendering pipeline is split into four focused services that can each be replaced independently. The first three are registered as scoped services (per-request), so you can safely inject other scoped services like `IPublishedContentQuery` or access `HttpContext`. `IExternalElementResolver` is a singleton.
 
 | Interface | Default | Responsibility | Lifecycle |
 |-----------|---------|----------------|-----------|
 | `IBlockModelFactory` | `BlockModelFactory` | Creates typed content/settings models and block item instances (BlockGridItem, BlockListItem, etc.) | Scoped |
 | `IBlockViewRenderer` | `BlockViewRenderer` | Renders block previews using either ViewComponents or partial views | Scoped |
 | `IBlockDataConverter` | `BlockDataConverter` | Deserializes raw block JSON and converts block item data to published elements | Scoped |
+| `IExternalElementResolver` | `ExternalElementResolver` | Resolves the Library element behind a block (draft, with a per-user permission check) | Singleton |
 
 ### IBlockModelFactory
 
@@ -443,12 +455,18 @@ public class CustomBlockDataConverter : IBlockDataConverter
     public BlockEditorData<RichTextBlockValue, RichTextBlockLayoutItem>? DeserializeRichText(string? blockData) { /* same pattern */ }
 
     public IPublishedElement ConvertToElement(BlockItemData data, IPublishedElement owner)
+        => ConvertToElement(data, owner, owningPropertyCulture: null);
+
+    // The culture of the stored property value the block belongs to, or null when the property
+    // does not vary by culture. The default interface implementation ignores it, so implement
+    // this overload to preview culture-variant blocks in the request's culture.
+    public IPublishedElement ConvertToElement(BlockItemData data, IPublishedElement owner, string? owningPropertyCulture)
     {
         // This method should throw if the element cannot be created,
         // as a missing element indicates a configuration problem.
         // The default implementation uses BlockEditorConverter.ConvertToElement()
         // to convert BlockItemData into IPublishedElement instances.
-        var element = _blockEditorConverter.ConvertToElement(owner, data, PropertyCacheLevel.None, preview: true);
+        var element = _blockEditorConverter.ConvertToElement(owner, data, PropertyCacheLevel.None, preview: true, owningPropertyCulture);
         return element ?? throw new InvalidOperationException($"Unable to find Element {data.ContentTypeAlias}");
     }
 
@@ -458,6 +476,14 @@ public class CustomBlockDataConverter : IBlockDataConverter
     }
 }
 ```
+
+### IExternalElementResolver
+
+Resolves the Library element behind a block whose layout item is external content (`IsExternalContent`), in its draft state. The element key comes from the backoffice client, so an implementation must check that the current user may browse the element before returning anything. The default uses `IElementCacheService` (draft) after an `IElementPermissionService` browse check for the current backoffice user.
+
+`ResolveAsync(Guid elementKey)` returns an `ExternalElementResult` with an `ExternalElementStatus` of `Success` (with the element), `NotFound` or `NotPermitted`. `NotFound` and `NotPermitted` show the corresponding alert in the preview (for a Block Grid area child, its own preview shows the alert, and only the parent block's `Model.Areas` leaves it out).
+
+`BlockPreviewService` takes the resolver in its constructor. A subclass passes it to `base(...)`, as in the example above.
 
 ### Registering Custom Services
 
@@ -476,4 +502,5 @@ builder.CreateUmbracoBuilder()
 builder.Services.AddScoped<IBlockModelFactory, CustomBlockModelFactory>();
 builder.Services.AddScoped<IBlockViewRenderer, CustomBlockViewRenderer>();
 builder.Services.AddScoped<IBlockDataConverter, CustomBlockDataConverter>();
+builder.Services.AddSingleton<IExternalElementResolver, CustomExternalElementResolver>();
 ```

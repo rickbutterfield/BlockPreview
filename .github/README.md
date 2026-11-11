@@ -1,5 +1,5 @@
 # BlockPreview
-[![Platform](https://img.shields.io/badge/Umbraco-17+-%233544B1?style=flat&logo=umbraco)](https://umbraco.com/products/umbraco-cms/)
+[![Platform](https://img.shields.io/badge/Umbraco-19+-%233544B1?style=flat&logo=umbraco)](https://umbraco.com/products/umbraco-cms/)
 [![NuGet](https://img.shields.io/nuget/v/Umbraco.Community.BlockPreview.svg)](https://www.nuget.org/packages/Umbraco.Community.BlockPreview/)
 [![GitHub](https://img.shields.io/github/license/rickbutterfield/Umbraco.Community.BlockPreview)](https://github.com/rickbutterfield/Umbraco.Community.BlockPreview/blob/develop/LICENSE)
 
@@ -17,6 +17,10 @@ Without BlockPreview, editors see each block as a plain labelled card. With it, 
 
 ## Supported Versions
 > [!NOTE]
+> **v7.x** supports Umbraco v19 (requires .NET 11). 7.0.0 is a pre-release (`7.0.0-beta1`) while Umbraco 19 is in beta
+>
+> **v6.x** supports Umbraco v18
+>
 > **v5.x** supports Umbraco v17
 > 
 > **v4.x** supports Umbraco v16
@@ -27,18 +31,18 @@ Without BlockPreview, editors see each block as a plain labelled card. With it, 
 
 ## Installation
 
-The Umbraco v17 version of this package is [available via NuGet](https://www.nuget.org/packages/Umbraco.Community.BlockPreview).
+The Umbraco v19 version of this package is a pre-release, [available via NuGet](https://www.nuget.org/packages/Umbraco.Community.BlockPreview). Install a specific version such as `7.0.0-beta1`, or tick "Include prerelease" in the NuGet Package Manager. The stable Umbraco v18 (6.x) and v17 (5.x) versions are on the same package.
 
 To install the package, you can use either .NET CLI:
 
 ```
-dotnet add package Umbraco.Community.BlockPreview --version 5.0.0
+dotnet add package Umbraco.Community.BlockPreview --version 7.0.0-beta1
 ```
 
 or the NuGet Package Manager:
 
 ```
-Install-Package Umbraco.Community.BlockPreview -Version 5.0.0
+Install-Package Umbraco.Community.BlockPreview -Version 7.0.0-beta1
 ```
 
 ## Quick Start
@@ -113,7 +117,7 @@ To raise a new bug, create an issue on the GitHub repository. To fix a bug or ad
 
 ### Using the Test Sites
 
-The repo comes with a test site for Umbraco 17. The site is configured with uSync out of the box to get you up and running with a test site quickly. Use the following credentials to log into the back office:
+The repo comes with a test site for Umbraco 19 (.NET 11). The site is configured with uSync out of the box to get you up and running with a test site quickly. Use the following credentials to log into the back office:
 
 ```
 Username: admin@example.com
