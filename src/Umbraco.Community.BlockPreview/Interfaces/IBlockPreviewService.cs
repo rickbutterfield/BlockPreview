@@ -50,6 +50,7 @@ namespace Umbraco.Community.BlockPreview.Interfaces
         /// <param name="settingsKey">The settings key.</param>
         /// <param name="blockIndex">The block index.</param>
         /// <returns>The rendered HTML.</returns>
+        // TODO (v8): Remove the default implementation.
         Task<string> RenderSingleBlock(string blockData, IPublishedContent content, ControllerContext controllerContext, string blockEditorAlias = "", Guid documentTypeUnique = default, string contentKey = "", string? settingsKey = default, int? blockIndex = 0)
             => RenderListBlock(blockData, content, controllerContext, blockEditorAlias, documentTypeUnique, contentKey, settingsKey, blockIndex);
 
