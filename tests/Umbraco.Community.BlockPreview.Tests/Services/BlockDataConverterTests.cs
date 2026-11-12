@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -229,6 +231,79 @@ public class BlockDataConverterTests
             .Returns((object?)null);
 
         var prop = CreatePropertyValue(TestEditorAlias, "real data");
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Once());
+    }
+
+    private static IEnumerable<TestCaseData> EmptyMediaShapes()
+    {
+        foreach (var json in new[]
+        {
+            "{\"src\":\"\"}",
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}",
+            "{\"src\":null}",
+            "{}",
+            "{\"crops\":[],\"name\":\"\"}",
+            "[]",
+            "\"\""
+        })
+        {
+            yield return new TestCaseData(JsonNode.Parse(json)).SetName($"JsonNode {json}");
+            yield return new TestCaseData(JsonDocument.Parse(json).RootElement).SetName($"JsonElement {json}");
+        }
+    }
+
+    [TestCaseSource(nameof(EmptyMediaShapes))]
+    public void FormatBlockData_WhenFromEditorReturnsNullForEmptyJsonShape_DoesNotLogWarning(object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(TestEditorAlias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [TestCaseSource(nameof(EmptyMediaShapes))]
+    public void FormatBlockData_WhenFromEditorThrowsForEmptyJsonShape_KeepsValueAndDoesNotLogWarning(object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new Exception("Invalid content key."));
+
+        var prop = CreatePropertyValue(TestEditorAlias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [Test]
+    public void FormatBlockData_WhenFromEditorThrowsForRealValue_KeepsValueAndLogsWarning()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new Exception("boom"));
+
+        var original = JsonNode.Parse("{\"src\":\"/media/a.jpg\",\"crops\":[]}");
+        var prop = CreatePropertyValue(TestEditorAlias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Once());
+    }
+
+    [Test]
+    public void FormatBlockData_WhenFromEditorReturnsNullForRealJsonObject_LogsWarning()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(TestEditorAlias, JsonNode.Parse("{\"src\":\"/media/a.jpg\"}"));
         _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
 
         VerifyWarningLogged(Times.Once());
