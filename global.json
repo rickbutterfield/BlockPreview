@@ -1,9 +1,7 @@
 {
   "sdk": {
-    "version": "11.0.100-rc.3.26522.148",
-    // Mirrors the CMS pin. actions/setup-dotnet@v5 reads this file, so CI installs exactly this SDK.
-    // TODO (v7): Restore "latestFeature" once the pinned SDK is a stable 11.0.100 release.
-    "rollForward": "disable",
+    "version": "11.0.100",
+    "rollForward": "latestFeature",
     "allowPrerelease": false
   }
 }

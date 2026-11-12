@@ -32,7 +32,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
         workspaceEditContentPath: "",
         contentElementTypeAlias: "",
         contentElementTypeKey: "",
-        areas: [],
+        areas: undefined,
         layout: undefined,
         layoutAreas: undefined,
         blockIndex: 0
@@ -100,6 +100,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         context.contentElementTypeAlias,
                         context.contentElementTypeKey,
                         context.areas,
+                        context.unsupported,
                         context.layout,
                         context.layoutAreas
                     ]),
@@ -109,13 +110,19 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         workspaceEditContentPath,
                         contentElementTypeAlias,
                         contentElementTypeKey,
-                        areas,
+                        blockTypeAreas,
+                        unsupported,
                         layout,
                         layoutAreas
                     ]) => {
+                        // An unsupported block (its type is no longer configured) never gets a block type, so
+                        // its areas stay undefined for good. Treat that as resolved with no areas, so it renders
+                        // and the server reports the missing configuration.
+                        const areas = blockTypeAreas ?? (unsupported ? [] : undefined);
                         const prevColumnSpan = this._blockContext.layout?.columnSpan;
                         const prevRowSpan = this._blockContext.layout?.rowSpan;
                         const prevLayoutAreas = this._blockContext.layoutAreas;
+                        const prevAreas = this._blockContext.areas;
 
                         this._blockContext.contentUdi = contentUdi ?? '';
                         this._blockContext.settingsUdi = settingsUdi ?? '';
@@ -133,9 +140,9 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         }
 
                         const trigger = decideGridRenderTrigger(
-                            { layoutAreas: prevLayoutAreas, layout: { columnSpan: prevColumnSpan, rowSpan: prevRowSpan } },
+                            { areas: prevAreas, layoutAreas: prevLayoutAreas, layout: { columnSpan: prevColumnSpan, rowSpan: prevRowSpan } },
                             { areas, layoutAreas, layout },
-                            { hasMarkup: !!this._htmlMarkup, managerObserved: this.#managerObserved },
+                            { hasMarkup: !!this._htmlMarkup, isLoading: this._isLoading, managerObserved: this.#managerObserved },
                         );
 
                         if (trigger.kind === 'render') {
@@ -200,7 +207,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
     }
 
     #filterLayouts(): UmbBlockGridLayoutModel[] {
-        const areas = this._blockContext.areas.map(area => {
+        const areas = (this._blockContext.areas ?? []).map(area => {
             const model: UmbBlockGridLayoutAreaItemModel = {
                 key: area.key,
                 items: this._blockContext.layoutAreas?.find(layout => layout.key === area.key)?.items ?? []
@@ -253,7 +260,9 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
     }
 
     protected override validatePreviewData(): boolean {
-        return super.validatePreviewData() && this._blockContext.contentUdi !== '';
+        // Not while the block type is unresolved: `areas` would go out as an empty list (see
+        // observeBlockValue). Every render path, including the base class's, passes through here.
+        return super.validatePreviewData() && this._blockContext.contentUdi !== '' && this._blockContext.areas !== undefined;
     }
 
     static override styles = [

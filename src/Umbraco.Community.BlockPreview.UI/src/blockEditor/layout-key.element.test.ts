@@ -116,6 +116,7 @@ function entryFake(host: HTMLElement, layout: Record<string, unknown>, contentKe
         contentElementTypeAlias: new UmbStringState('myElement').asObservable(),
         contentElementTypeKey: new UmbStringState(ELEMENT_TYPE_KEY).asObservable(),
         areas: new UmbArrayState([], (x: { key: string }) => x.key).asObservable(),
+        unsupported: new UmbBasicState<boolean | undefined>(false).asObservable(),
         layoutAreas: new UmbBasicState<undefined>(undefined).asObservable(),
         layout: new UmbBasicState<Record<string, unknown>>(layout).asObservable(),
         getHostElement: () => host,

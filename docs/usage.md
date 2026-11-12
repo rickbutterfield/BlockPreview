@@ -3,7 +3,7 @@
 This package installs a custom Web Component preview for the Block Grid, Block List, Single Block and Rich Text editors in the backoffice.
 
 > [!NOTE]
-> BlockPreview 7.x requires Umbraco 19 and .NET 11. The 7.0.0 releases are pre-releases (`7.0.0-beta1`) while Umbraco 19 is in beta.
+> BlockPreview 7.x requires Umbraco 19 and .NET 11. The 7.0.0 releases are pre-releases (`7.0.0-rc1`) while Umbraco 19 is a release candidate.
 
 How components look within the Block Grid before and after enabling BlockPreview:
 
@@ -115,9 +115,6 @@ Blocks that use an element from the Umbraco 19 Library are previewed like any ot
 - **Permissions:** the preview only renders an element the current backoffice user may browse in the Library. Otherwise the block shows the alert "You do not have permission to preview the Library element used by this block."
 - **Missing elements:** if the Library element has been deleted or trashed, the block shows "The Library element used by this block could not be found." (In a Block Grid area, the child's own preview shows the alert, and the parent block's `Model.Areas` leaves the missing child out.)
 - Replace this behaviour by implementing [`IExternalElementResolver`](advanced-customization.md#iexternalelementresolver).
-
-> [!WARNING]
-> **Known limitation on Umbraco 19.0.0-beta1:** a Library element placed inside a Block Grid **area** is lost by the backoffice itself (the Block Grid entry rewrites its layout with no area children while the Library block type loads, and that is saved). BlockPreview cannot recover it. It is not specific to previews; re-test on the next Umbraco 19 pre-release.
 
 ## Culture-variant blocks
 When the block property varies by culture, the preview renders in the culture you are editing, so a view that reads culture-specific values shows the right language. Invariant properties preview as before. A block editor nested inside another block is previewed as invariant.

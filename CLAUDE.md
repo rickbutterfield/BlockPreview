@@ -9,7 +9,7 @@
 - TypeScript/Lit - Frontend UI components (Umbraco backoffice extension)
 - Vite - Frontend build tooling
 
-**Target Platform:** Umbraco CMS v19+ (`7.0.0-beta1` is a pre-release against CMS `19.0.0-beta1`)
+**Target Platform:** Umbraco CMS v19+ (`7.0.0-rc1` is a pre-release against CMS `19.0.0-rc1`)
 
 **Package:** [Umbraco.Community.BlockPreview on NuGet](https://www.nuget.org/packages/Umbraco.Community.BlockPreview)
 
@@ -78,7 +78,7 @@ Test site credentials:
 Uses [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning) for automatic versioning.
 
 - Version defined in `version.json`
-- Release tags: `release-{version}` (e.g., `release-7.0.0-beta1`)
+- Release tags: `release-{version}` (e.g., `release-7.0.0-rc1`)
 - Release branches: `release/{version}`
 
 **Cutting a release:**
@@ -175,10 +175,10 @@ Add `// TODO (v{X+1}): Remove the default implementation.` above it. Examples: `
 
 ## Build Notes (v7)
 
-- `global.json` pins the .NET SDK `11.0.100-rc.3.26522.148` (mirrors the CMS pin; `rollForward: disable`). CI reads it through `actions/setup-dotnet`. Restore `latestFeature` once a stable 11.0.100 ships.
-- Version, pre-release: Nerdbank.GitVersioning reads the committed `version.json`. A non-release branch packs as `7.0.0--beta1.preview.N.g<sha>`, only a build on a `release/*` branch or a `release-*` tag packs as `7.0.0-beta1` (`publicReleaseRefSpec` matches `refs/heads/main` exactly, so `v7/main` does not). The `UpdatePackageManifestVersion` target restamps the tracked `wwwroot/.../umbraco-package.json` on every `dotnet build`, so after building run `npm run build` in the UI project (it writes the clean `version.json` value) before committing that file.
+- `global.json` pins the stable .NET SDK `11.0.100` with `rollForward: latestFeature` (mirrors the CMS pin). CI reads it through `actions/setup-dotnet`.
+- Version, pre-release: Nerdbank.GitVersioning reads the committed `version.json`. A non-release branch packs as `7.0.0--rc1.preview.N.g<sha>`, only a build on a `release/*` branch or a `release-*` tag packs as `7.0.0-rc1` (`publicReleaseRefSpec` matches `refs/heads/main` exactly, so `v7/main` does not). The `UpdatePackageManifestVersion` target restamps the tracked `wwwroot/.../umbraco-package.json` on every `dotnet build`, so after building run `npm run build` in the UI project (it writes the clean `version.json` value) before committing that file.
 - SDK 11 generates `buildTransitive/<PackageId>.targets` for static web assets, so the package's own build file is `buildTransitive/Umbraco.Community.BlockPreview.props`. Never name a hand-written file `<PackageId>.targets` (NU5118 is an error here).
-- TestSite: the `.csproj` turns off `StaticWebAssetBuildCompressAllAssets`/`StaticWebAssetPublishCompressAllAssets` because compressing the CMS 19.0.0-beta1 static assets fails on the .NET 11 RC SDK (`TODO (v7)` there). Remove it once the CMS/SDK GA fixes this.
+- TestSite: the `.csproj` turns off `StaticWebAssetBuildCompressAllAssets`/`StaticWebAssetPublishCompressAllAssets` because compressing the CMS 19.0.0-rc1 static assets still fails on the stable .NET SDK 11.0.100 (`TODO (v7)` there). Remove it once a later CMS/SDK release fixes this.
 
 ---
 

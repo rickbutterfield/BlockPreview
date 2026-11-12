@@ -17,7 +17,7 @@ Without BlockPreview, editors see each block as a plain labelled card. With it, 
 
 ## Supported Versions
 > [!NOTE]
-> **v7.x** supports Umbraco v19 (requires .NET 11). 7.0.0 is a pre-release (`7.0.0-beta1`) while Umbraco 19 is in beta
+> **v7.x** supports Umbraco v19 (requires .NET 11). 7.0.0 is a pre-release (`7.0.0-rc1`) while Umbraco 19 is a release candidate
 >
 > **v6.x** supports Umbraco v18
 >
@@ -31,18 +31,18 @@ Without BlockPreview, editors see each block as a plain labelled card. With it, 
 
 ## Installation
 
-The Umbraco v19 version of this package is a pre-release, [available via NuGet](https://www.nuget.org/packages/Umbraco.Community.BlockPreview). Install a specific version such as `7.0.0-beta1`, or tick "Include prerelease" in the NuGet Package Manager. The stable Umbraco v18 (6.x) and v17 (5.x) versions are on the same package.
+The Umbraco v19 version of this package is a pre-release, [available via NuGet](https://www.nuget.org/packages/Umbraco.Community.BlockPreview). Install a specific version such as `7.0.0-rc1`, or tick "Include prerelease" in the NuGet Package Manager. The stable Umbraco v18 (6.x) and v17 (5.x) versions are on the same package.
 
 To install the package, you can use either .NET CLI:
 
 ```
-dotnet add package Umbraco.Community.BlockPreview --version 7.0.0-beta1
+dotnet add package Umbraco.Community.BlockPreview --version 7.0.0-rc1
 ```
 
 or the NuGet Package Manager:
 
 ```
-Install-Package Umbraco.Community.BlockPreview -Version 7.0.0-beta1
+Install-Package Umbraco.Community.BlockPreview -Version 7.0.0-rc1
 ```
 
 ## Quick Start

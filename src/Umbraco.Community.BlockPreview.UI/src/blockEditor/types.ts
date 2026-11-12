@@ -22,7 +22,8 @@ export interface BlockContext {
 }
 
 export interface BlockGridContext extends BlockContext {
-  areas: UmbBlockGridTypeAreaType[];
+  /** `undefined` until the block's type resolves (a Library block's does so asynchronously); not the same as no areas. */
+  areas: UmbBlockGridTypeAreaType[] | undefined;
   layout?: UmbBlockGridLayoutModel | undefined;
   layoutAreas?: UmbBlockGridLayoutAreaItemModel[];
 }

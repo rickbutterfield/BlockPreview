@@ -72,21 +72,20 @@ test.describe("Library element previews", () => {
   test("Block Grid renders a root Library element @smoke", async ({ page }) => {
     const previews = await waitForPreviews(page, 'block-grid-preview', 1);
 
-    // Only the root block is asserted: the area child is covered by the fixme below.
+    // The root block is asserted here (>= 1 preview); the area child has its own test below.
     expect(previews[0].rendered).toBe(true);
     expect(previews[0].text).toContain('Library Hero');
     expect(previews[0].errors).toEqual([]);
   });
 
-  // KNOWN CMS 19.0.0-beta1 BUG, not a BlockPreview bug: the CMS's block grid entry context rewrites a
-  // Library block's areas to `items: []` before its block type has resolved, so the seeded area child
-  // never reaches the editor. Remove the fixme once a later 19 pre-release fixes it.
-  test.fixme("Block Grid renders a Library element inside an area", async ({ page }) => {
+  // Needs CMS 19.0.0-rc1 or later (umbraco/Umbraco-CMS#24581): earlier builds lost the area child.
+  test("Block Grid renders a Library element inside an area", async ({ page }) => {
     const previews = await waitForPreviews(page, 'block-grid-preview', 2);
 
     expect(previews).toHaveLength(2);
     for (const preview of previews) {
       expect(preview.rendered).toBe(true);
+      expect(preview.text).toContain('Library Hero');
       expect(preview.errors).toEqual([]);
     }
   });
