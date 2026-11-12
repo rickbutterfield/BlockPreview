@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
@@ -285,9 +286,20 @@ namespace Umbraco.Community.BlockPreview.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex,
-                    "BlockPreview: FromEditor threw for property '{EditorAlias}' ({OriginalType}). Keeping original value",
-                    propertyData.EditorAlias, originalType);
+                // Some editors (e.g. the image cropper) throw for an empty value; that is expected, so keep it out of the warnings
+                if (IsEmptyValue(originalValue))
+                {
+                    _logger.LogDebug(
+                        "BlockPreview: FromEditor threw for empty property '{EditorAlias}' ({OriginalType}): {Message}. Keeping original value",
+                        propertyData.EditorAlias, originalType, ex.Message);
+                }
+                else
+                {
+                    _logger.LogWarning(ex,
+                        "BlockPreview: FromEditor threw for property '{EditorAlias}' ({OriginalType}). Keeping original value",
+                        propertyData.EditorAlias, originalType);
+                }
+
                 propertyData.Value = originalValue;
             }
         }
@@ -296,15 +308,34 @@ namespace Umbraco.Community.BlockPreview.Services
         {
             null => true,
             string s => string.IsNullOrWhiteSpace(s),
-            JsonElement element => element.ValueKind switch
-            {
-                JsonValueKind.Null or JsonValueKind.Undefined => true,
-                JsonValueKind.String => string.IsNullOrWhiteSpace(element.GetString()),
-                JsonValueKind.Array => element.GetArrayLength() == 0,
-                JsonValueKind.Object => !element.EnumerateObject().Any(),
-                _ => false
-            },
+            JsonNode node => IsEmptyNode(node),
+            JsonElement element => IsEmptyElement(element),
             System.Collections.IEnumerable enumerable => !enumerable.GetEnumerator().MoveNext(),
+            _ => false
+        };
+
+        // A media-style object (image cropper, upload field) with an empty "src" has no file, whatever else it carries (e.g. a default focal point).
+        private static bool IsEmptyNode(JsonNode? node) => node switch
+        {
+            null => true,
+            JsonArray array => array.Count == 0,
+            JsonObject obj => obj.TryGetPropertyValue("src", out var src)
+                ? IsEmptyNode(src)
+                : obj.All(property => IsEmptyNode(property.Value)),
+            JsonValue jsonValue => jsonValue.TryGetValue<JsonElement>(out var element)
+                ? IsEmptyElement(element)
+                : jsonValue.TryGetValue<string>(out var text) && string.IsNullOrWhiteSpace(text),
+            _ => false
+        };
+
+        private static bool IsEmptyElement(JsonElement element) => element.ValueKind switch
+        {
+            JsonValueKind.Null or JsonValueKind.Undefined => true,
+            JsonValueKind.String => string.IsNullOrWhiteSpace(element.GetString()),
+            JsonValueKind.Array => element.GetArrayLength() == 0,
+            JsonValueKind.Object => element.TryGetProperty("src", out var src)
+                ? IsEmptyElement(src)
+                : element.EnumerateObject().All(property => IsEmptyElement(property.Value)),
             _ => false
         };
     }
