@@ -339,9 +339,12 @@ namespace Umbraco.Community.BlockPreview.Services
             null => true,
             JsonObject obj => obj.Count == 0
                 || (obj.Count == 2
-                    && obj["left"]?.GetValueKind() == JsonValueKind.Number && (double?)obj["left"] == 0.5
-                    && obj["top"]?.GetValueKind() == JsonValueKind.Number && (double?)obj["top"] == 0.5),
+                    && IsHalf(obj["left"])
+                    && IsHalf(obj["top"])),
             _ => false
         };
+
+        private static bool IsHalf(JsonNode? node)
+            => node is JsonValue value && value.TryGetValue<double>(out var number) && number == 0.5;
     }
 }
