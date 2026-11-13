@@ -326,7 +326,7 @@ namespace Umbraco.Community.BlockPreview.Services
                 var node = value switch
                 {
                     JsonNode n => n,
-                    JsonElement e => JsonNode.Parse(e.GetRawText()),
+                    JsonElement { ValueKind: JsonValueKind.Object } e => JsonNode.Parse(e.GetRawText()),
                     string s => JsonNode.Parse(s),
                     _ => null
                 };
@@ -336,8 +336,9 @@ namespace Umbraco.Community.BlockPreview.Services
                     && id.TryGetValue<string>(out var text)
                     && !string.IsNullOrWhiteSpace(text);
             }
-            catch (JsonException)
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException)
             {
+                // Never fail the preview over a value this check can't read: treat it as having no temporary file
                 return false;
             }
         }

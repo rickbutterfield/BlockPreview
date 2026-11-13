@@ -273,6 +273,7 @@ public class BlockDataConverterTests
         // The image cropper and upload field skip FromEditor (see SkippedShapes), so only other editors can drop real data here
         foreach (var (alias, json) in new[]
         {
+            (UploadFieldAlias, "{\"src\":\"/media/a.pdf\"}"),
             (TestEditorAlias, "{\"src\":\"\",\"url\":\"https://example.com/a.jpg\"}"),
             (TestEditorAlias, "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}"),
             (TestEditorAlias, "{\"src\":\"/media/a.jpg\",\"crops\":[]}"),
@@ -413,6 +414,25 @@ public class BlockDataConverterTests
             v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
             Times.Once);
         Assert.That(prop.Value, Is.EqualTo("/media/x/y.pdf"));
+    }
+
+    [Test]
+    public void FormatBlockData_ForUploadFieldWithUndefinedJsonElement_DoesNotThrowAndStillCallsFromEditor()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new ArgumentException("undefined"));
+
+        var original = default(JsonElement);
+        var prop = CreatePropertyValue(UploadFieldAlias, original);
+
+        Assert.DoesNotThrow(() => _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) }));
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
+            Times.Once);
+        Assert.That(prop.Value, Is.EqualTo(original));
+        VerifyWarningLogged(Times.Never());
     }
 
     #endregion
