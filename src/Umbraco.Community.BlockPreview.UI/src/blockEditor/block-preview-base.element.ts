@@ -4,6 +4,8 @@ import { BlockContext } from './types';
 import { css, html, ifDefined, nothing, property, PropertyValueMap, state, unsafeHTML } from '@umbraco-cms/backoffice/external/lit';
 import { UMB_BLOCK_WORKSPACE_CONTEXT, UmbBlockDataType } from '@umbraco-cms/backoffice/block';
 import type { UmbBlockEditorCustomViewConfiguration, UmbBlockEditorCustomViewElement } from '@umbraco-cms/backoffice/block-custom-view';
+import { UMB_PARENT_ENTITY_CONTEXT } from '@umbraco-cms/backoffice/entity';
+import type { Observable } from '@umbraco-cms/backoffice/external/rxjs';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
 import { UMB_PROPERTY_DATASET_CONTEXT } from '@umbraco-cms/backoffice/property';
 import { UmbApiError } from '@umbraco-cms/backoffice/resources';
@@ -54,6 +56,9 @@ export abstract class BlockPreviewBaseElement<TContext extends BlockContext = Bl
      * Undefined until (and unless) a nearest block workspace is resolved.
      */
     protected _ownerContentTypeUnique?: string;
+
+    /** Whether the document is still being created, and so does not exist on the server yet. */
+    protected _isNewDocument: boolean = false;
 
     @property({ attribute: false, hasChanged: (val: any, old: any) => JSON.stringify(val) !== JSON.stringify(old) })
     content?: UmbBlockDataType;
@@ -117,6 +122,7 @@ export abstract class BlockPreviewBaseElement<TContext extends BlockContext = Bl
             // nearest block workspace when nested, so no individual view can silently
             // miss it. Harmless for top-level previews (no block workspace to observe).
             this.observeOwnerContentType();
+            this.observeParentEntity();
             await this.setupContextObservers();
         });
     }
@@ -214,6 +220,34 @@ export abstract class BlockPreviewBaseElement<TContext extends BlockContext = Bl
                     this.renderBlockPreview();
                 }
             });
+        });
+    }
+
+    /**
+     * Observe the parent of the document. A document that has not been saved yet cannot be
+     * found on the server, which then renders the preview against this parent instead.
+     */
+    protected observeParentEntity() {
+        this.consumeContext(UMB_PARENT_ENTITY_CONTEXT, (context) => {
+            if (!context) return;
+            this.observe(context.parent, (parent) => {
+                const parentUnique = parent?.unique ?? '';
+                if (parentUnique === this._blockContext.parentUnique) return;
+                this._blockContext.parentUnique = parentUnique;
+
+                // The parent resolves asynchronously, so blocks that already exist when a
+                // document is created (e.g. from a blueprint) may have rendered without it.
+                if (this._isNewDocument && this._workspaceContextResolved) {
+                    this.renderBlockPreview();
+                }
+            });
+        });
+    }
+
+    /** Tracks whether the document workspace is creating a new document. */
+    protected observeIsNewDocument(isNew: Observable<boolean | undefined> | undefined) {
+        this.observe(isNew, (value) => {
+            this._isNewDocument = value === true;
         });
     }
 

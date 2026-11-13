@@ -7,6 +7,7 @@ import { tryExecute } from "@umbraco-cms/backoffice/resources";
 export interface BlockPreviewQuery {
     blockEditorAlias: string;
     nodeKey: string;
+    parentKey?: string;
     contentElementAlias: string;
     documentTypeUnique: string;
     contentUdi: string;
@@ -18,6 +19,7 @@ export interface BlockPreviewQuery {
 export interface RtePreviewQuery {
     blockEditorAlias: string;
     nodeKey: string;
+    parentKey?: string;
     contentElementAlias: string;
     documentTypeUnique: string;
     culture: string;

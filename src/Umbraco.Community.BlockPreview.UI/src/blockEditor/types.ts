@@ -6,6 +6,7 @@ import {
 
 export interface BlockContext {
   unique: string;
+  parentUnique: string;
   documentTypeUnique: string;
   contentUdi: string;
   settingsUdi: string;
