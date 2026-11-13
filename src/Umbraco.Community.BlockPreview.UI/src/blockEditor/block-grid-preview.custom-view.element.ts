@@ -240,8 +240,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getGridStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique,
-            parentKey: this._blockContext.parentUnique || undefined
+            nodeKey: this._blockContext.unique
         });
         return data;
     }

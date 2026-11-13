@@ -13,6 +13,7 @@ import { BlockListPreviewCustomView } from './block-list-preview.custom-view.ele
  * cannot find it by nodeKey. Every preview then failed: the block data had no owner and
  * the published request had no page, so views reading Umbraco.AssignedContentItem threw.
  * The preview now sends the parent's key, which the server renders against instead.
+ * The stylesheet request does not: it is sent once, usually before the parent resolves.
  *
  * The parent comes from UMB_PARENT_ENTITY_CONTEXT, which resolves asynchronously. A new
  * document must render again once it arrives; a saved one must not, or every block on
@@ -131,14 +132,14 @@ describe('block list preview of an unsaved document', () => {
         root.appendChild(document.createElement(previewTag));
     }
 
-    it('sends the parent key with the preview and stylesheet requests', async () => {
+    it('sends the parent key with the preview request only', async () => {
         await mount(true, new UmbBasicState<UmbEntityModel | undefined>(PARENT));
 
         const rendered = await waitForCondition(() => previewQueries.length > 0 && stylesheetQueries.length > 0);
 
         expect(rendered).to.be.true;
         expect(previewQueries[0].parentKey).to.equal(PARENT_KEY);
-        expect(stylesheetQueries[0].parentKey).to.equal(PARENT_KEY);
+        expect(stylesheetQueries[0].parentKey).to.be.undefined;
     });
 
     it('renders a new document again once its parent resolves', async () => {

@@ -74,7 +74,6 @@ export type GetGridStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
-        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/grid/stylesheets';
 };
@@ -139,7 +138,6 @@ export type GetListStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
-        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/list/stylesheets';
 };
@@ -201,7 +199,6 @@ export type GetRteStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
-        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/rte/stylesheets';
 };
@@ -247,7 +244,6 @@ export type GetSingleBlockStylesheetsData = {
     query?: {
         nodeKey?: string;
         documentTypeUnique?: string;
-        parentKey?: string;
     };
     url: '/umbraco/block-preview/api/v1/preview/single/stylesheets';
 };

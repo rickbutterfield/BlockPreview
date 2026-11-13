@@ -160,7 +160,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
+                    (IPublishedContent? page, IPublishedContent? content) = GetPreviewContent(nodeKey, documentTypeUnique, parentKey);
 
                     string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
@@ -187,6 +187,23 @@ namespace Umbraco.Community.BlockPreview.Controllers
             string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
+
+        /// <summary>
+        /// Renders a preview for a grid block using the associated Razor view or ViewComponent.
+        /// </summary>
+        [NonAction]
+        [Obsolete("Use the overload with parentKey instead. Scheduled for removal in v7.")]
+        public Task<IActionResult> PreviewGridBlock(
+            string blockData,
+            Guid nodeKey,
+            string blockEditorAlias,
+            string contentElementAlias,
+            string? culture,
+            Guid documentTypeUnique,
+            string contentUdi,
+            string? settingsUdi,
+            int? blockIndex)
+            => PreviewGridBlock(blockData, nodeKey, blockEditorAlias, contentElementAlias, culture, documentTypeUnique, contentUdi, settingsUdi, blockIndex, parentKey: null);
 
         /// <summary>
         /// Renders a preview for a block list block using the associated Razor view or ViewComponent.
@@ -223,7 +240,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
+                    (IPublishedContent? page, IPublishedContent? content) = GetPreviewContent(nodeKey, documentTypeUnique, parentKey);
 
                     string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
@@ -250,6 +267,23 @@ namespace Umbraco.Community.BlockPreview.Controllers
             string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
+
+        /// <summary>
+        /// Renders a preview for a block list block using the associated Razor view or ViewComponent.
+        /// </summary>
+        [NonAction]
+        [Obsolete("Use the overload with parentKey instead. Scheduled for removal in v7.")]
+        public Task<IActionResult> PreviewListBlock(
+            string blockData,
+            Guid nodeKey,
+            string blockEditorAlias,
+            string contentElementAlias,
+            string culture,
+            Guid documentTypeUnique,
+            string contentUdi,
+            string? settingsUdi,
+            int? blockIndex)
+            => PreviewListBlock(blockData, nodeKey, blockEditorAlias, contentElementAlias, culture, documentTypeUnique, contentUdi, settingsUdi, blockIndex, parentKey: null);
 
         /// <summary>
         /// Renders a preview for a rich text block using the associated Razor view or ViewComponent.
@@ -280,7 +314,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
+                    (IPublishedContent? page, IPublishedContent? content) = GetPreviewContent(nodeKey, documentTypeUnique, parentKey);
 
                     string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
@@ -307,6 +341,20 @@ namespace Umbraco.Community.BlockPreview.Controllers
             string? cleanMarkup = PreviewMarkupCleaner.Clean(markup);
             return Ok(cleanMarkup);
         }
+
+        /// <summary>
+        /// Renders a preview for a rich text block using the associated Razor view or ViewComponent.
+        /// </summary>
+        [NonAction]
+        [Obsolete("Use the overload with parentKey instead. Scheduled for removal in v7.")]
+        public Task<IActionResult> PreviewRichTextMarkup(
+            string blockData,
+            Guid nodeKey,
+            string blockEditorAlias,
+            string contentElementAlias,
+            string culture,
+            Guid documentTypeUnique)
+            => PreviewRichTextMarkup(blockData, nodeKey, blockEditorAlias, contentElementAlias, culture, documentTypeUnique, parentKey: null);
 
         /// <summary>
         /// Renders a preview for a single block using the associated Razor view or ViewComponent.
@@ -343,7 +391,7 @@ namespace Umbraco.Community.BlockPreview.Controllers
             {
                 try
                 {
-                    IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out IPublishedContent? page);
+                    (IPublishedContent? page, IPublishedContent? content) = GetPreviewContent(nodeKey, documentTypeUnique, parentKey);
 
                     string? currentCulture = await GetCurrentCulture(culture, page ?? content);
 
@@ -372,20 +420,35 @@ namespace Umbraco.Community.BlockPreview.Controllers
         }
 
         /// <summary>
+        /// Renders a preview for a single block using the associated Razor view or ViewComponent.
+        /// </summary>
+        [NonAction]
+        [Obsolete("Use the overload with parentKey instead. Scheduled for removal in v7.")]
+        public Task<IActionResult> PreviewSingleBlock(
+            string blockData,
+            Guid nodeKey,
+            string blockEditorAlias,
+            string contentElementAlias,
+            string culture,
+            Guid documentTypeUnique,
+            string contentUdi,
+            string? settingsUdi,
+            int? blockIndex)
+            => PreviewSingleBlock(blockData, nodeKey, blockEditorAlias, contentElementAlias, culture, documentTypeUnique, contentUdi, settingsUdi, blockIndex, parentKey: null);
+
+        /// <summary>
         /// Retrieves the stylesheet paths for a single block preview.
         /// </summary>
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <param name="parentKey">The key of the node's parent, used while the node has not been saved yet.</param>
         /// <returns>A list of stylesheet paths if configured; otherwise, an empty list.</returns>
         [HttpGet("preview/single/stylesheets")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<string>))]
         public async Task<IActionResult> GetSingleBlockStylesheets(
             [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default,
-            [FromQuery] Guid? parentKey = null)
+            [FromQuery] Guid documentTypeUnique = default)
         {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey);
+            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
 
             await _requestEnricher.EnrichAsync(HttpContext, content);
 
@@ -492,16 +555,14 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// </summary>
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <param name="parentKey">The key of the node's parent, used while the node has not been saved yet.</param>
         /// <returns>A list of stylesheet paths if configured; otherwise, a 404 response.</returns>
         [HttpGet("preview/grid/stylesheets")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<string>))]
         public async Task<IActionResult> GetGridStylesheets(
             [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default,
-            [FromQuery] Guid? parentKey = null)
+            [FromQuery] Guid documentTypeUnique = default)
         {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey);
+            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
 
             await _requestEnricher.EnrichAsync(HttpContext, content);
 
@@ -543,16 +604,14 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// </summary>
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <param name="parentKey">The key of the node's parent, used while the node has not been saved yet.</param>
         /// <returns>A list of stylesheet paths if configured; otherwise, a 404 response.</returns>
         [HttpGet("preview/list/stylesheets")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<string>))]
         public async Task<IActionResult> GetListStylesheets(
             [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default,
-            [FromQuery] Guid? parentKey = null)
+            [FromQuery] Guid documentTypeUnique = default)
         {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey);
+            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
 
             await _requestEnricher.EnrichAsync(HttpContext, content);
 
@@ -594,16 +653,14 @@ namespace Umbraco.Community.BlockPreview.Controllers
         /// </summary>
         /// <param name="nodeKey">The key of the node.</param>
         /// <param name="documentTypeUnique">The unique identifier for the document type.</param>
-        /// <param name="parentKey">The key of the node's parent, used while the node has not been saved yet.</param>
         /// <returns>A list of stylesheet paths if configured; otherwise, a 404 response.</returns>
         [HttpGet("preview/rte/stylesheets")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<string>))]
         public async Task<IActionResult> GetRteStylesheets(
             [FromQuery] Guid nodeKey = default,
-            [FromQuery] Guid documentTypeUnique = default,
-            [FromQuery] Guid? parentKey = null)
+            [FromQuery] Guid documentTypeUnique = default)
         {
-            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique, parentKey);
+            IPublishedContent? content = GetPublishedContent(nodeKey, documentTypeUnique);
 
             await _requestEnricher.EnrichAsync(HttpContext, content);
 
@@ -660,40 +717,21 @@ namespace Umbraco.Community.BlockPreview.Controllers
             context.PublishedRequest = requestBuilder.Build();
         }
 
-        private IPublishedContent? GetPublishedContent(Guid? nodeKey = default, Guid? documentTypeUnique = default, Guid? parentKey = default)
+        private IPublishedContent? GetPublishedContent(Guid? nodeKey = default, Guid? documentTypeUnique = default)
         {
-            return GetPublishedContent(nodeKey, documentTypeUnique, parentKey, out _);
+            return GetPreviewContent(nodeKey, documentTypeUnique, parentKey: null).Content;
         }
 
-        /// <summary>
-        /// Resolves the content that owns the block data and goes to the enrichers and the renderer: the node, or while
-        /// it has not been saved yet, a document of the same type. <paramref name="page"/> stands in for the current page
-        /// on the published request: the node, or while it has not been saved yet, its parent.
-        /// </summary>
-        private IPublishedContent? GetPublishedContent(Guid? nodeKey, Guid? documentTypeUnique, Guid? parentKey, out IPublishedContent? page)
+        private PreviewContent GetPreviewContent(Guid? nodeKey, Guid? documentTypeUnique, Guid? parentKey)
         {
-            page = null;
-
             if (!_umbracoContextAccessor.TryGetUmbracoContext(out IUmbracoContext? context))
-                return null;
+                return default;
 
-            if (nodeKey.HasValue)
-            {
-                page = context.Content?.GetById(preview: true, nodeKey.GetValueOrDefault());
-                if (page != null)
-                    return page;
-            }
-
-            // A node that has not been saved yet is not in the cache. Its parent sits where the node will,
-            // so the preview renders within the same site, ancestors and domain culture.
-            if (parentKey.HasValue)
-            {
-                page = context.Content?.GetById(preview: true, parentKey.GetValueOrDefault());
-            }
-
-            // The parent usually has another document type, so it only owns the block data when no document
-            // of the node's own type exists yet.
-            return GetDocumentOfType(nodeKey, documentTypeUnique) ?? page;
+            return PreviewContentResolver.Resolve(
+                nodeKey,
+                parentKey,
+                key => context.Content?.GetById(preview: true, key),
+                () => GetDocumentOfType(nodeKey, documentTypeUnique));
         }
 
         private IPublishedContent? GetDocumentOfType(Guid? nodeKey, Guid? documentTypeUnique)

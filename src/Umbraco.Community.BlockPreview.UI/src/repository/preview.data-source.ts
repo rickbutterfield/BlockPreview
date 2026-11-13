@@ -28,7 +28,6 @@ export interface RtePreviewQuery {
 export interface StylesheetQuery {
     documentTypeUnique: string;
     nodeKey: string;
-    parentKey?: string;
 }
 
 export interface IPreviewDataSource {

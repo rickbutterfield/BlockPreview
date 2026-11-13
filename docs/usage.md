@@ -99,7 +99,7 @@ When rendering a preview, BlockPreview invokes your ViewComponent with the block
 
 - A single parameter that accepts the block item, e.g. `InvokeAsync(BlockGridItem item)`
 - Parameters named after the block item's properties, e.g. `InvokeAsync(IPublishedElement content, IPublishedElement? settings)`. With more than one parameter, a name that matches a property of the block item always takes that property's value, whatever the parameter's type, so a parameter called `content`, `settings` or `areas` must be able to accept it.
-- Parameters that accept the block item and/or the current page, e.g. `InvokeAsync(BlockGridItem model, IPublishedContent? currentPage)`. Any other parameter whose type accepts the block item or an `IPublishedContent` is filled in the same way, whatever its name; that includes `IPublishedElement`, which gets the page, not the block's content. The current page is the content the preview is shown for; if that document isn't saved yet, it is another document of the same document type (the first one in the content tree, published or not), when there is one. A parameter typed `object` is never filled this way, and any parameter that isn't filled keeps its default value.
+- Parameters that accept the block item and/or the current page, e.g. `InvokeAsync(BlockGridItem model, IPublishedContent? currentPage)`. Any other parameter whose type accepts the block item or an `IPublishedContent` is filled in the same way, whatever its name; that includes `IPublishedElement`, which gets the page, not the block's content. The current page is the content the preview is shown for; if that document isn't saved yet, it is another document of the same document type (the first one in the content tree, published or not), or its parent when there is none. A parameter typed `object` is never filled this way, and any parameter that isn't filled keeps its default value.
 
 If your front-end passes extra arguments, such as `new { model = item, currentPage = Model }`, make sure they follow one of these patterns so the back office preview gets the same values.
 
@@ -119,3 +119,17 @@ For example:
     <p>This content will only be shown to content editors in the back office!</p>
 }
 ```
+
+## Documents that aren't saved yet
+While a document is being created, it doesn't exist on the server yet. The preview then uses the document's parent as the current page, so `Umbraco.AssignedContentItem` is the parent and the preview resolves the same site, ancestors and domain culture as the new document will.
+
+The parent usually has a different document type. A view that casts `Umbraco.AssignedContentItem` to the page's own type fails on a new document, so check the type instead:
+
+```razor
+@if (Umbraco.AssignedContentItem is HomePage homePage)
+{
+    <h2>@homePage.Title</h2>
+}
+```
+
+Once the document is saved, `Umbraco.AssignedContentItem` is the document itself.

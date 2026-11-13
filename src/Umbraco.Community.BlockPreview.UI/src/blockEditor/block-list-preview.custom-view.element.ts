@@ -180,8 +180,7 @@ export class BlockListPreviewCustomView extends BlockPreviewBaseElement<BlockLis
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getListStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique,
-            parentKey: this._blockContext.parentUnique || undefined
+            nodeKey: this._blockContext.unique
         });
         return data;
     }

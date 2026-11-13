@@ -183,8 +183,7 @@ export class RichTextPreviewCustomView extends BlockPreviewBaseElement<BlockCont
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getRteStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique,
-            parentKey: this._blockContext.parentUnique || undefined
+            nodeKey: this._blockContext.unique
         });
         return data;
     }

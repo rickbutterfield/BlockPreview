@@ -177,8 +177,7 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
     protected async fetchStylesheets() {
         const { data } = await this.#previewDataSource.getSingleBlockStylesheets({
             documentTypeUnique: this._blockContext.documentTypeUnique,
-            nodeKey: this._blockContext.unique,
-            parentKey: this._blockContext.parentUnique || undefined
+            nodeKey: this._blockContext.unique
         });
         return data;
     }

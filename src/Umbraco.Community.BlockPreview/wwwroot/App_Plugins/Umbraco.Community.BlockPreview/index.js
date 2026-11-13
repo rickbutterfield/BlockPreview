@@ -1,11 +1,11 @@
 import { UMB_AUTH_CONTEXT as pt } from "@umbraco-cms/backoffice/auth";
 import { UmbContextToken as bt } from "@umbraco-cms/backoffice/context-api";
-import { nothing as kt, html as H, ifDefined as Be, unsafeHTML as yt, css as ae, property as w, state as N, customElement as ce } from "@umbraco-cms/backoffice/external/lit";
+import { nothing as kt, html as H, ifDefined as Be, unsafeHTML as yt, css as ae, property as C, state as N, customElement as ce } from "@umbraco-cms/backoffice/external/lit";
 import { UMB_BLOCK_WORKSPACE_CONTEXT as qe } from "@umbraco-cms/backoffice/block";
 import { UMB_PARENT_ENTITY_CONTEXT as ft } from "@umbraco-cms/backoffice/entity";
 import { UmbLitElement as _t } from "@umbraco-cms/backoffice/lit-element";
-import { UMB_PROPERTY_DATASET_CONTEXT as Ct } from "@umbraco-cms/backoffice/property";
-import { UmbApiError as wt, tryExecute as E } from "@umbraco-cms/backoffice/resources";
+import { UMB_PROPERTY_DATASET_CONTEXT as wt } from "@umbraco-cms/backoffice/property";
+import { UmbApiError as Ct, tryExecute as E } from "@umbraco-cms/backoffice/resources";
 import { UmbControllerBase as We } from "@umbraco-cms/backoffice/class-api";
 import { UMB_BLOCK_GRID_ENTRY_CONTEXT as vt, UMB_BLOCK_GRID_MANAGER_CONTEXT as mt } from "@umbraco-cms/backoffice/block-grid";
 import { UMB_CONTENT_WORKSPACE_CONTEXT as O } from "@umbraco-cms/backoffice/content";
@@ -79,28 +79,28 @@ const At = {
               const dt = ht.split(`
 `), X = [];
               let Ue;
-              for (const C of dt)
-                if (C.startsWith("data:"))
-                  X.push(C.replace(/^data:\s*/, ""));
-                else if (C.startsWith("event:"))
-                  Ue = C.replace(/^event:\s*/, "");
-                else if (C.startsWith("id:"))
-                  d = C.replace(/^id:\s*/, "");
-                else if (C.startsWith("retry:")) {
+              for (const w of dt)
+                if (w.startsWith("data:"))
+                  X.push(w.replace(/^data:\s*/, ""));
+                else if (w.startsWith("event:"))
+                  Ue = w.replace(/^event:\s*/, "");
+                else if (w.startsWith("id:"))
+                  d = w.replace(/^id:\s*/, "");
+                else if (w.startsWith("retry:")) {
                   const Ae = Number.parseInt(
-                    C.replace(/^retry:\s*/, ""),
+                    w.replace(/^retry:\s*/, ""),
                     10
                   );
                   Number.isNaN(Ae) || (h = Ae);
                 }
               let A, Pe = !1;
               if (X.length) {
-                const C = X.join(`
+                const w = X.join(`
 `);
                 try {
-                  A = JSON.parse(C), Pe = !0;
+                  A = JSON.parse(w), Pe = !0;
                 } catch {
-                  A = C;
+                  A = w;
                 }
               }
               Pe && (r && await r(A), s && (A = await s(A))), i?.({
@@ -739,7 +739,7 @@ class p extends _t {
   }
   // region Shared context observers
   observePropertyDataset() {
-    this.consumeContext(Ct, (e) => {
+    this.consumeContext(wt, (e) => {
       e && (this._blockContext.culture = e.getVariantId().culture ?? "");
     });
   }
@@ -820,7 +820,7 @@ class p extends _t {
         () => this.callPreviewApi()
       );
       if (this._requestId !== e) return;
-      i != null ? (this._htmlMarkup = i, this._isLoading = !1) : s ? (this._error = wt.isUmbApiError(s) ? s.message : this.localize.term("blockPreview_renderError"), this._isLoading = !1) : this._isLoading = !1;
+      i != null ? (this._htmlMarkup = i, this._isLoading = !1) : s ? (this._error = Ct.isUmbApiError(s) ? s.message : this.localize.term("blockPreview_renderError"), this._isLoading = !1) : this._isLoading = !1;
     } catch (i) {
       if (this._requestId !== e) return;
       this._error = this.localize.term("blockPreview_renderFailed"), this._isLoading = !1, console.error("Block preview error:", i);
@@ -941,25 +941,25 @@ class p extends _t {
   }
 }
 g([
-  w({ attribute: !1, hasChanged: (t, e) => JSON.stringify(t) !== JSON.stringify(e) })
+  C({ attribute: !1, hasChanged: (t, e) => JSON.stringify(t) !== JSON.stringify(e) })
 ], p.prototype, "content");
 g([
-  w({ attribute: !1, hasChanged: (t, e) => JSON.stringify(t) !== JSON.stringify(e) })
+  C({ attribute: !1, hasChanged: (t, e) => JSON.stringify(t) !== JSON.stringify(e) })
 ], p.prototype, "settings");
 g([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], p.prototype, "contentKey");
 g([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], p.prototype, "config");
 g([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], p.prototype, "unpublished");
 g([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], p.prototype, "icon");
 g([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], p.prototype, "label");
 g([
   N()
@@ -1040,7 +1040,7 @@ var ti = Object.defineProperty, ii = Object.getOwnPropertyDescriptor, Je = (t) =
   for (var r = s > 1 ? void 0 : s ? ii(e, i) : e, o = t.length - 1, n; o >= 0; o--)
     (n = t[o]) && (r = (s ? n(e, i, r) : n(r)) || r);
   return s && r && ti(e, i, r), r;
-}, Ce = (t, e, i) => e.has(t) || Je("Cannot " + i), q = (t, e, i) => (Ce(t, e, "read from private field"), i ? i.call(t) : e.get(t)), F = (t, e, i) => e.has(t) ? Je("Cannot add the same private member more than once") : e instanceof WeakSet ? e.add(t) : e.set(t, i), Le = (t, e, i, s) => (Ce(t, e, "write to private field"), e.set(t, i), i), $ = (t, e, i) => (Ce(t, e, "access private method"), i), M, B, Qe, R, Q, Ze, oe;
+}, we = (t, e, i) => e.has(t) || Je("Cannot " + i), q = (t, e, i) => (we(t, e, "read from private field"), i ? i.call(t) : e.get(t)), F = (t, e, i) => e.has(t) ? Je("Cannot add the same private member more than once") : e instanceof WeakSet ? e.add(t) : e.set(t, i), Le = (t, e, i, s) => (we(t, e, "write to private field"), e.set(t, i), i), $ = (t, e, i) => (we(t, e, "access private method"), i), M, B, Qe, R, Q, Ze, oe;
 const si = "block-grid-preview";
 let z = class extends p {
   constructor() {
@@ -1139,8 +1139,7 @@ let z = class extends p {
   async fetchStylesheets() {
     const { data: t } = await q(this, M).getGridStylesheets({
       documentTypeUnique: this._blockContext.documentTypeUnique,
-      nodeKey: this._blockContext.unique,
-      parentKey: this._blockContext.parentUnique || void 0
+      nodeKey: this._blockContext.unique
     });
     return t;
   }
@@ -1195,8 +1194,10 @@ oe = function() {
       })),
       columnSpan: this._blockContext.layout?.columnSpan ?? 0,
       rowSpan: this._blockContext.layout?.rowSpan ?? 0,
-      contentKey: this._blockContext.layout?.contentKey ?? "",
-      settingsKey: this._blockContext.layout?.settingsKey
+      // A new block renders before its layout entry arrives (#322), so fall back to the
+      // entry's own keys: an empty contentKey can't be read as a Guid on the server.
+      contentKey: this._blockContext.layout?.contentKey || this._blockContext.contentUdi,
+      settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || void 0
     }
   ];
 };
@@ -1214,14 +1215,14 @@ z.styles = [
         `
 ];
 Ye([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], z.prototype, "blockGridValue", 1);
 z = Ye([
   ce(si)
 ], z);
 var ri = Object.defineProperty, ni = Object.getOwnPropertyDescriptor, et = (t) => {
   throw TypeError(t);
-}, we = (t, e, i, s) => {
+}, Ce = (t, e, i, s) => {
   for (var r = s > 1 ? void 0 : s ? ni(e, i) : e, o = t.length - 1, n; o >= 0; o--)
     (n = t[o]) && (r = (s ? n(e, i, r) : n(r)) || r);
   return s && r && ri(e, i, r), r;
@@ -1299,8 +1300,7 @@ let D = class extends p {
   async fetchStylesheets() {
     const { data: t } = await pe(this, I).getListStylesheets({
       documentTypeUnique: this._blockContext.documentTypeUnique,
-      nodeKey: this._blockContext.unique,
-      parentKey: this._blockContext.parentUnique || void 0
+      nodeKey: this._blockContext.unique
     });
     return t;
   }
@@ -1367,13 +1367,13 @@ D.styles = [
             }
         `
 ];
-we([
+Ce([
   N()
 ], D.prototype, "_blockListValue", 2);
-we([
-  w({ attribute: !1 })
+Ce([
+  C({ attribute: !1 })
 ], D.prototype, "blockListValue", 1);
-D = we([
+D = Ce([
   ce(oi)
 ], D);
 var ai = Object.defineProperty, ci = Object.getOwnPropertyDescriptor, st = (t) => {
@@ -1456,8 +1456,7 @@ let V = class extends p {
   async fetchStylesheets() {
     const { data: t } = await ke(this, K).getSingleBlockStylesheets({
       documentTypeUnique: this._blockContext.documentTypeUnique,
-      nodeKey: this._blockContext.unique,
-      parentKey: this._blockContext.parentUnique || void 0
+      nodeKey: this._blockContext.unique
     });
     return t;
   }
@@ -1528,7 +1527,7 @@ me([
   N()
 ], V.prototype, "_blockSingleValue", 2);
 me([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], V.prototype, "blockSingleValue", 1);
 V = me([
   ce(li)
@@ -1610,8 +1609,7 @@ let G = class extends p {
   async fetchStylesheets() {
     const { data: t } = await J(this, W).getRteStylesheets({
       documentTypeUnique: this._blockContext.documentTypeUnique,
-      nodeKey: this._blockContext.unique,
-      parentKey: this._blockContext.parentUnique || void 0
+      nodeKey: this._blockContext.unique
     });
     return t;
   }
@@ -1667,7 +1665,7 @@ xe([
   N()
 ], G.prototype, "_blockRteValue", 2);
 xe([
-  w({ attribute: !1 })
+  C({ attribute: !1 })
 ], G.prototype, "blockRteValue", 1);
 G = xe([
   ce(di)
