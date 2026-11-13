@@ -271,7 +271,7 @@ namespace Umbraco.Community.BlockPreview.Services
                 var newType = propertyData.Value?.GetType().Name ?? "null";
 
                 // FromEditor turning an empty value into null is expected, so only warn when real data was dropped
-                if (propertyData.Value is null && !IsEmptyValue(originalValue))
+                if (propertyData.Value is null && !IsEmptyValue(originalValue, propertyData.EditorAlias))
                 {
                     _logger.LogWarning(
                         "BlockPreview: FromEditor returned null for property '{EditorAlias}' (was {OriginalType}). Original value: {OriginalValue}",
@@ -287,7 +287,7 @@ namespace Umbraco.Community.BlockPreview.Services
             catch (Exception ex)
             {
                 // Some editors (e.g. the image cropper) throw for an empty value; that is expected, so keep it out of the warnings
-                if (IsEmptyValue(originalValue))
+                if (IsEmptyValue(originalValue, propertyData.EditorAlias))
                 {
                     _logger.LogDebug(
                         "BlockPreview: FromEditor threw for empty property '{EditorAlias}' ({OriginalType}): {Message}. Keeping original value",
@@ -304,38 +304,43 @@ namespace Umbraco.Community.BlockPreview.Services
             }
         }
 
-        private static bool IsEmptyValue(object? value) => value switch
+        // Empty means "nothing the editor would keep": 0 and false are real values. The media editors send a default
+        // focal point and an empty src for a blank value, so those are only ignored for those two aliases.
+        private static bool IsEmptyValue(object? value, string? editorAlias) => value switch
         {
             null => true,
             string s => string.IsNullOrWhiteSpace(s),
-            JsonNode node => IsEmptyNode(node),
-            JsonElement element => IsEmptyElement(element),
+            JsonNode node => IsEmptyNode(node, IsMediaEditor(editorAlias)),
+            JsonElement { ValueKind: JsonValueKind.Undefined } => true,
+            JsonElement element => IsEmptyNode(JsonNode.Parse(element.GetRawText()), IsMediaEditor(editorAlias)),
             System.Collections.IEnumerable enumerable => !enumerable.GetEnumerator().MoveNext(),
             _ => false
         };
 
-        // A media-style object (image cropper, upload field) with an empty "src" has no file, whatever else it carries (e.g. a default focal point).
-        private static bool IsEmptyNode(JsonNode? node) => node switch
+        private static bool IsMediaEditor(string? editorAlias) =>
+            editorAlias is PropertyEditors.Aliases.ImageCropper or PropertyEditors.Aliases.UploadField;
+
+        private static bool IsEmptyNode(JsonNode? node, bool isMedia) => node switch
         {
             null => true,
             JsonArray array => array.Count == 0,
-            JsonObject obj => obj.TryGetPropertyValue("src", out var src)
-                ? IsEmptyNode(src)
-                : obj.All(property => IsEmptyNode(property.Value)),
+            JsonObject obj => obj.All(property => isMedia && property.Key == "focalPoint"
+                ? IsDefaultFocalPoint(property.Value)
+                : IsEmptyNode(property.Value, isMedia)),
             JsonValue jsonValue => jsonValue.TryGetValue<JsonElement>(out var element)
-                ? IsEmptyElement(element)
+                ? element.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined
+                    || (element.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(element.GetString()))
                 : jsonValue.TryGetValue<string>(out var text) && string.IsNullOrWhiteSpace(text),
             _ => false
         };
 
-        private static bool IsEmptyElement(JsonElement element) => element.ValueKind switch
+        private static bool IsDefaultFocalPoint(JsonNode? focalPoint) => focalPoint switch
         {
-            JsonValueKind.Null or JsonValueKind.Undefined => true,
-            JsonValueKind.String => string.IsNullOrWhiteSpace(element.GetString()),
-            JsonValueKind.Array => element.GetArrayLength() == 0,
-            JsonValueKind.Object => element.TryGetProperty("src", out var src)
-                ? IsEmptyElement(src)
-                : element.EnumerateObject().All(property => IsEmptyElement(property.Value)),
+            null => true,
+            JsonObject obj => obj.Count == 0
+                || (obj.Count == 2
+                    && obj["left"]?.GetValueKind() == JsonValueKind.Number && (double?)obj["left"] == 0.5
+                    && obj["top"]?.GetValueKind() == JsonValueKind.Number && (double?)obj["top"] == 0.5),
             _ => false
         };
     }
