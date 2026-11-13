@@ -1,0 +1,11 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ContentModels.SingleBlock>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+@using Umbraco.Cms.Core.Models.Blocks
+@{
+	Layout = "Layout.cshtml";
+}
+
+@if (Model.Content is not null)
+{
+	@await Html.GetBlockListHtmlAsync(new BlockListModel(new[] { Model.Content }))
+}
