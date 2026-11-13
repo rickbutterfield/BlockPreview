@@ -270,13 +270,10 @@ public class BlockDataConverterTests
 
     private static IEnumerable<TestCaseData> RealShapes()
     {
-        var guid = Guid.NewGuid();
+        // The image cropper and upload field skip FromEditor (see SkippedShapes), so only other editors can drop real data here
         foreach (var (alias, json) in new[]
         {
-            (UploadFieldAlias, $"{{\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}"),
-            (ImageCropperAlias, $"{{\"focalPoint\":{{\"left\":0.5,\"top\":0.5}},\"crops\":[],\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}"),
-            (ImageCropperAlias, "{\"focalPoint\":{\"left\":0.2,\"top\":0.7},\"crops\":[],\"src\":\"\"}"),
-            (ImageCropperAlias, "{\"src\":\"\",\"url\":\"https://example.com/a.jpg\"}"),
+            (UploadFieldAlias, "{\"src\":\"/media/a.pdf\"}"),
             (TestEditorAlias, "{\"src\":\"\",\"url\":\"https://example.com/a.jpg\"}"),
             (TestEditorAlias, "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}"),
             (TestEditorAlias, "{\"src\":\"/media/a.jpg\",\"crops\":[]}"),
@@ -353,6 +350,90 @@ public class BlockDataConverterTests
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times);
+
+    #endregion
+
+    #region Editors that need a content key skip FromEditor
+
+    private static IEnumerable<TestCaseData> SkippedShapes()
+    {
+        var guid = Guid.NewGuid();
+        foreach (var json in new[]
+        {
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}",
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"/media/x/y.png\"}",
+            $"{{\"focalPoint\":{{\"left\":0.5,\"top\":0.5}},\"crops\":[],\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}"
+        })
+        {
+            foreach (var data in AsNodeAndElement(ImageCropperAlias, json)) yield return data;
+        }
+
+        foreach (var data in AsNodeAndElement(UploadFieldAlias, $"{{\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}")) yield return data;
+        foreach (var data in AsNodeAndElement(UploadFieldAlias, $"{{\"src\":\"/media/x/y.pdf\",\"temporaryFileId\":\"{guid}\"}}")) yield return data;
+        yield return new TestCaseData(UploadFieldAlias, $"{{\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}")
+            .SetName($"{UploadFieldAlias} string temporaryFileId");
+    }
+
+    [TestCaseSource(nameof(SkippedShapes))]
+    public void FormatBlockData_ForEditorsNeedingContentKey_SkipsFromEditorAndKeepsValue(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), It.IsAny<object?>()))
+            .Throws(new Exception("Invalid content key."));
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), It.IsAny<object?>()),
+            Times.Never);
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Never());
+    }
+
+    private static IEnumerable<TestCaseData> UploadShapesWithoutTemporaryFile()
+    {
+        foreach (var json in new[] { "{\"src\":\"\"}", "{\"src\":\"/media/x/y.pdf\"}", "{\"src\":\"\",\"temporaryFileId\":\"\"}" })
+        {
+            foreach (var data in AsNodeAndElement(UploadFieldAlias, json)) yield return data;
+        }
+    }
+
+    // A saved upload is mapped to its file URL (the form the element's value converter reads) and an empty one to null.
+    [TestCaseSource(nameof(UploadShapesWithoutTemporaryFile))]
+    public void FormatBlockData_ForUploadFieldWithoutTemporaryFile_StillCallsFromEditor(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns("/media/x/y.pdf");
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
+            Times.Once);
+        Assert.That(prop.Value, Is.EqualTo("/media/x/y.pdf"));
+    }
+
+    [Test]
+    public void FormatBlockData_ForUploadFieldWithUndefinedJsonElement_DoesNotThrowAndStillCallsFromEditor()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new ArgumentException("undefined"));
+
+        var original = default(JsonElement);
+        var prop = CreatePropertyValue(UploadFieldAlias, original);
+
+        Assert.DoesNotThrow(() => _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) }));
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
+            Times.Once);
+        Assert.That(prop.Value, Is.EqualTo(original));
+        VerifyWarningLogged(Times.Never());
+    }
 
     #endregion
 

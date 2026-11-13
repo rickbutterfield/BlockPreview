@@ -256,6 +256,14 @@ namespace Umbraco.Community.BlockPreview.Services
             var originalValue = propertyData.Value;
             var originalType = originalValue?.GetType().Name ?? "null";
 
+            if (ShouldSkipFromEditor(propertyData.EditorAlias, originalValue))
+            {
+                _logger.LogDebug(
+                    "BlockPreview: Skipping FromEditor for '{EditorAlias}' ({OriginalType}), it needs a content key and writes to media storage. Keeping original value",
+                    propertyData.EditorAlias, originalType);
+                return;
+            }
+
             try
             {
                 var config = _dataTypeConfigurationCache.GetConfiguration(propertyData.PropertyType.DataTypeKey);
@@ -297,6 +305,41 @@ namespace Umbraco.Community.BlockPreview.Services
                 }
 
                 propertyData.Value = originalValue;
+            }
+        }
+
+        // These editors' FromEditor needs ContentKey/PropertyTypeKey (a preview has neither) and moves the
+        // editor's temporary upload into media storage, which a preview must not do. The image cropper always
+        // needs the keys. The upload field only does for an unsaved upload (temporaryFileId); a saved or empty
+        // value is mapped to its file URL (or null) without them, and the element needs that form.
+        private static bool ShouldSkipFromEditor(string? editorAlias, object? value) => editorAlias switch
+        {
+            PropertyEditors.Aliases.ImageCropper => true,
+            PropertyEditors.Aliases.UploadField => HasTemporaryFileId(value),
+            _ => false
+        };
+
+        private static bool HasTemporaryFileId(object? value)
+        {
+            try
+            {
+                var node = value switch
+                {
+                    JsonNode n => n,
+                    JsonElement { ValueKind: JsonValueKind.Object } e => JsonNode.Parse(e.GetRawText()),
+                    string s => JsonNode.Parse(s),
+                    _ => null
+                };
+
+                return node is JsonObject obj
+                    && obj["temporaryFileId"] is JsonValue id
+                    && id.TryGetValue<string>(out var text)
+                    && !string.IsNullOrWhiteSpace(text);
+            }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+            {
+                // Never fail the preview over a value this check can't read: treat it as having no temporary file
+                return false;
             }
         }
 
