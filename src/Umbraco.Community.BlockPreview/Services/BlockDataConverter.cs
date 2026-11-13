@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
@@ -266,7 +267,7 @@ namespace Umbraco.Community.BlockPreview.Services
                 var newType = propertyData.Value?.GetType().Name ?? "null";
 
                 // FromEditor turning an empty value into null is expected, so only warn when real data was dropped
-                if (propertyData.Value is null && !IsEmptyValue(originalValue))
+                if (propertyData.Value is null && !IsEmptyValue(originalValue, propertyData.EditorAlias))
                 {
                     _logger.LogWarning(
                         "BlockPreview: FromEditor returned null for property '{EditorAlias}' (was {OriginalType}). Original value: {OriginalValue}",
@@ -281,27 +282,65 @@ namespace Umbraco.Community.BlockPreview.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex,
-                    "BlockPreview: FromEditor threw for property '{EditorAlias}' ({OriginalType}). Keeping original value",
-                    propertyData.EditorAlias, originalType);
+                // Some editors (e.g. the image cropper) throw for an empty value; that is expected, so keep it out of the warnings
+                if (IsEmptyValue(originalValue, propertyData.EditorAlias))
+                {
+                    _logger.LogDebug(
+                        "BlockPreview: FromEditor threw for empty property '{EditorAlias}' ({OriginalType}): {Message}. Keeping original value",
+                        propertyData.EditorAlias, originalType, ex.Message);
+                }
+                else
+                {
+                    _logger.LogWarning(ex,
+                        "BlockPreview: FromEditor threw for property '{EditorAlias}' ({OriginalType}). Keeping original value",
+                        propertyData.EditorAlias, originalType);
+                }
+
                 propertyData.Value = originalValue;
             }
         }
 
-        private static bool IsEmptyValue(object? value) => value switch
+        // Empty means "nothing the editor would keep": 0 and false are real values. The media editors send a default
+        // focal point and an empty src for a blank value, so those are only ignored for those two aliases.
+        private static bool IsEmptyValue(object? value, string? editorAlias) => value switch
         {
             null => true,
             string s => string.IsNullOrWhiteSpace(s),
-            JsonElement element => element.ValueKind switch
-            {
-                JsonValueKind.Null or JsonValueKind.Undefined => true,
-                JsonValueKind.String => string.IsNullOrWhiteSpace(element.GetString()),
-                JsonValueKind.Array => element.GetArrayLength() == 0,
-                JsonValueKind.Object => !element.EnumerateObject().Any(),
-                _ => false
-            },
+            JsonNode node => IsEmptyNode(node, IsMediaEditor(editorAlias)),
+            JsonElement { ValueKind: JsonValueKind.Undefined } => true,
+            JsonElement element => IsEmptyNode(JsonNode.Parse(element.GetRawText()), IsMediaEditor(editorAlias)),
             System.Collections.IEnumerable enumerable => !enumerable.GetEnumerator().MoveNext(),
             _ => false
         };
+
+        private static bool IsMediaEditor(string? editorAlias) =>
+            editorAlias is PropertyEditors.Aliases.ImageCropper or PropertyEditors.Aliases.UploadField;
+
+        private static bool IsEmptyNode(JsonNode? node, bool isMedia) => node switch
+        {
+            null => true,
+            JsonArray array => array.Count == 0,
+            JsonObject obj => obj.All(property => isMedia && property.Key == "focalPoint"
+                ? IsDefaultFocalPoint(property.Value)
+                : IsEmptyNode(property.Value, isMedia)),
+            JsonValue jsonValue => jsonValue.TryGetValue<JsonElement>(out var element)
+                ? element.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined
+                    || (element.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(element.GetString()))
+                : jsonValue.TryGetValue<string>(out var text) && string.IsNullOrWhiteSpace(text),
+            _ => false
+        };
+
+        private static bool IsDefaultFocalPoint(JsonNode? focalPoint) => focalPoint switch
+        {
+            null => true,
+            JsonObject obj => obj.Count == 0
+                || (obj.Count == 2
+                    && IsHalf(obj["left"])
+                    && IsHalf(obj["top"])),
+            _ => false
+        };
+
+        private static bool IsHalf(JsonNode? node)
+            => node is JsonValue value && value.TryGetValue<double>(out var number) && number == 0.5;
     }
 }

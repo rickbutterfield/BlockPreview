@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -22,6 +24,8 @@ public class BlockDataConverterTests
     private Mock<ILogger<BlockDataConverter>> _loggerMock = null!;
 
     private const string TestEditorAlias = "Umbraco.TextBox";
+    private const string ImageCropperAlias = "Umbraco.ImageCropper";
+    private const string UploadFieldAlias = "Umbraco.UploadField";
 
     [SetUp]
     public void SetUp()
@@ -31,11 +35,15 @@ public class BlockDataConverterTests
         _valueEditorMock = new Mock<IDataValueEditor>();
         _loggerMock = new Mock<ILogger<BlockDataConverter>>();
 
-        var dataEditorMock = new Mock<IDataEditor>();
-        dataEditorMock.Setup(e => e.Alias).Returns(TestEditorAlias);
-        dataEditorMock.Setup(e => e.GetValueEditor()).Returns(_valueEditorMock.Object);
+        var dataEditors = new[] { TestEditorAlias, ImageCropperAlias, UploadFieldAlias }.Select(alias =>
+        {
+            var dataEditorMock = new Mock<IDataEditor>();
+            dataEditorMock.Setup(e => e.Alias).Returns(alias);
+            dataEditorMock.Setup(e => e.GetValueEditor()).Returns(_valueEditorMock.Object);
+            return dataEditorMock.Object;
+        }).ToArray();
 
-        var dataEditorCollection = new DataEditorCollection(() => new[] { dataEditorMock.Object });
+        var dataEditorCollection = new DataEditorCollection(() => dataEditors);
         var propertyEditors = new PropertyEditorCollection(dataEditorCollection);
 
         _converter = new BlockDataConverter(
@@ -231,6 +239,108 @@ public class BlockDataConverterTests
         var prop = CreatePropertyValue(TestEditorAlias, "real data");
         _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
 
+        VerifyWarningLogged(Times.Once());
+    }
+
+    private static IEnumerable<TestCaseData> AsNodeAndElement(string alias, string json)
+    {
+        yield return new TestCaseData(alias, JsonNode.Parse(json)).SetName($"{alias} JsonNode {json}");
+        yield return new TestCaseData(alias, JsonDocument.Parse(json).RootElement).SetName($"{alias} JsonElement {json}");
+    }
+
+    private static IEnumerable<TestCaseData> EmptyShapes()
+    {
+        foreach (var json in new[] { "{\"src\":\"\"}", "{\"src\":null}", "{}", "{\"crops\":[],\"name\":\"\"}", "[]", "\"\"" })
+        {
+            foreach (var alias in new[] { TestEditorAlias, ImageCropperAlias, UploadFieldAlias })
+            {
+                foreach (var data in AsNodeAndElement(alias, json)) yield return data;
+            }
+        }
+
+        foreach (var json in new[]
+        {
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}",
+            "{\"focalPoint\":null,\"crops\":[],\"src\":\"\",\"temporaryFileId\":\"\"}"
+        })
+        {
+            foreach (var data in AsNodeAndElement(ImageCropperAlias, json)) yield return data;
+        }
+    }
+
+    private static IEnumerable<TestCaseData> RealShapes()
+    {
+        var guid = Guid.NewGuid();
+        foreach (var (alias, json) in new[]
+        {
+            (UploadFieldAlias, $"{{\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}"),
+            (ImageCropperAlias, $"{{\"focalPoint\":{{\"left\":0.5,\"top\":0.5}},\"crops\":[],\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}"),
+            (ImageCropperAlias, "{\"focalPoint\":{\"left\":0.2,\"top\":0.7},\"crops\":[],\"src\":\"\"}"),
+            (ImageCropperAlias, "{\"src\":\"\",\"url\":\"https://example.com/a.jpg\"}"),
+            (TestEditorAlias, "{\"src\":\"\",\"url\":\"https://example.com/a.jpg\"}"),
+            (TestEditorAlias, "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}"),
+            (TestEditorAlias, "{\"src\":\"/media/a.jpg\",\"crops\":[]}"),
+            (TestEditorAlias, "{\"value\":0}"),
+            (TestEditorAlias, "{\"enabled\":false}"),
+            (TestEditorAlias, "0"),
+            (TestEditorAlias, "false")
+        })
+        {
+            foreach (var data in AsNodeAndElement(alias, json)) yield return data;
+        }
+    }
+
+    [TestCaseSource(nameof(EmptyShapes))]
+    public void FormatBlockData_WhenFromEditorReturnsNullForEmptyJsonShape_DoesNotLogWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [TestCaseSource(nameof(EmptyShapes))]
+    public void FormatBlockData_WhenFromEditorThrowsForEmptyJsonShape_KeepsValueAndDoesNotLogWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new Exception("Invalid content key."));
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [TestCaseSource(nameof(RealShapes))]
+    public void FormatBlockData_WhenFromEditorReturnsNullForRealJsonShape_LogsWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Once());
+    }
+
+    [TestCaseSource(nameof(RealShapes))]
+    public void FormatBlockData_WhenFromEditorThrowsForRealJsonShape_KeepsValueAndLogsWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new Exception("boom"));
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        Assert.That(prop.Value, Is.SameAs(original));
         VerifyWarningLogged(Times.Once());
     }
 
