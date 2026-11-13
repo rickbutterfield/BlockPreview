@@ -63,14 +63,15 @@ namespace Umbraco.Community.BlockPreview
             });
 
             builder.Services.TryAddScoped<IBlockModelFactory, BlockModelFactory>();
-            builder.Services.TryAddScoped<IBlockViewRenderer>(sp =>
-                ActivatorUtilities.CreateInstance<BlockViewRenderer>(sp));
+            builder.Services.TryAddScoped<IBlockViewRenderer, BlockViewRenderer>();
             builder.Services.TryAddScoped<IBlockDataConverter, BlockDataConverter>();
             builder.Services.TryAddScoped<IBlockTypeCacheService, BlockTypeCacheService>();
-            builder.Services.TryAddSingleton<IBlockPreviewViewResolver>(sp =>
-                ActivatorUtilities.CreateInstance<BlockPreviewViewResolver>(sp));
-            builder.Services.TryAddScoped<IBlockPreviewService>(sp =>
-                ActivatorUtilities.CreateInstance<BlockPreviewService>(sp));
+            builder.Services.TryAddSingleton<IBlockPreviewViewResolver, BlockPreviewViewResolver>();
+            // A singleton: its dependencies are singletons in the CMS, and the obsolete BlockPreviewService constructor
+            // resolves it from the root provider (StaticServiceProvider), which cannot hand out scoped services.
+            builder.Services.TryAddSingleton<IExternalElementResolver, ExternalElementResolver>();
+            // Two public constructors: ActivatorUtilities honours [ActivatorUtilitiesConstructor] on the current one.
+            builder.Services.TryAddScoped<IBlockPreviewService>(sp => ActivatorUtilities.CreateInstance<BlockPreviewService>(sp));
             builder.Services.TryAddScoped<IBlockPreviewRequestEnricher, NoopBlockPreviewRequestEnricher>();
             builder.Services.TryAddScoped<IBlockPreviewResponseEnricher, NoopBlockPreviewResponseEnricher>();
 

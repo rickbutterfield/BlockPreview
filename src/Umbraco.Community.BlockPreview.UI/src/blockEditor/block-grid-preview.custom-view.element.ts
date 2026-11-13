@@ -5,6 +5,7 @@ import { css, customElement, property } from "@umbraco-cms/backoffice/external/l
 import { UMB_BLOCK_GRID_ENTRY_CONTEXT, UMB_BLOCK_GRID_MANAGER_CONTEXT, UmbBlockGridLayoutModel, UmbBlockGridValueModel, UmbBlockGridLayoutAreaItemModel } from "@umbraco-cms/backoffice/block-grid";
 import { UMB_CONTENT_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/content";
 import { observeMultiple } from "@umbraco-cms/backoffice/observable-api";
+import { findBlockIndex } from './layout-key';
 import { decideGridRenderTrigger, ResizeDebouncer } from './render-scheduler';
 
 const elementName = "block-grid-preview";
@@ -23,13 +24,15 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
         unique: "",
         documentTypeUnique: "",
         contentUdi: "",
+        layoutKey: "",
+        isExternalContent: false,
         settingsUdi: "",
         blockEditorAlias: "",
         culture: "",
         workspaceEditContentPath: "",
         contentElementTypeAlias: "",
         contentElementTypeKey: "",
-        areas: [],
+        areas: undefined,
         layout: undefined,
         layoutAreas: undefined,
         blockIndex: 0
@@ -97,6 +100,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         context.contentElementTypeAlias,
                         context.contentElementTypeKey,
                         context.areas,
+                        context.unsupported,
                         context.layout,
                         context.layoutAreas
                     ]),
@@ -106,13 +110,19 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         workspaceEditContentPath,
                         contentElementTypeAlias,
                         contentElementTypeKey,
-                        areas,
+                        blockTypeAreas,
+                        unsupported,
                         layout,
                         layoutAreas
                     ]) => {
+                        // An unsupported block (its type is no longer configured) never gets a block type, so
+                        // its areas stay undefined for good. Treat that as resolved with no areas, so it renders
+                        // and the server reports the missing configuration.
+                        const areas = blockTypeAreas ?? (unsupported ? [] : undefined);
                         const prevColumnSpan = this._blockContext.layout?.columnSpan;
                         const prevRowSpan = this._blockContext.layout?.rowSpan;
                         const prevLayoutAreas = this._blockContext.layoutAreas;
+                        const prevAreas = this._blockContext.areas;
 
                         this._blockContext.contentUdi = contentUdi ?? '';
                         this._blockContext.settingsUdi = settingsUdi ?? '';
@@ -122,6 +132,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         this._blockContext.areas = areas;
                         this._blockContext.layout = layout!;
                         this._blockContext.layoutAreas = layoutAreas;
+                        this.applyLayoutIdentity(layout);
 
                         if (!this.#managerObserved && this._blockContext.contentUdi) {
                             this.#managerObserved = true;
@@ -129,9 +140,9 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                         }
 
                         const trigger = decideGridRenderTrigger(
-                            { layoutAreas: prevLayoutAreas, layout: { columnSpan: prevColumnSpan, rowSpan: prevRowSpan } },
+                            { areas: prevAreas, layoutAreas: prevLayoutAreas, layout: { columnSpan: prevColumnSpan, rowSpan: prevRowSpan } },
                             { areas, layoutAreas, layout },
-                            { hasMarkup: !!this._htmlMarkup, managerObserved: this.#managerObserved },
+                            { hasMarkup: !!this._htmlMarkup, isLoading: this._isLoading, managerObserved: this.#managerObserved },
                         );
 
                         if (trigger.kind === 'render') {
@@ -163,10 +174,11 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                     observeMultiple([
                         context.contents,
                         context.settings,
+                        context.layouts,
                         context.exposes,
                         context.propertyAlias
                     ]),
-                    async ([contents, settings, exposes, propertyAlias]) => {
+                    async ([contents, settings, layouts, exposes, propertyAlias]) => {
                         this._blockContext.blockEditorAlias = propertyAlias ?? '';
                         this.blockGridValue = {
                             contentData: contents ?? [],
@@ -175,7 +187,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                             layout: { ['Umbraco.BlockGrid']: this.#filterLayouts() }
                         };
                         this.setExposes(exposes);
-                        this._blockContext.blockIndex = (contents ?? []).findIndex(x => x.key === this._blockContext.contentUdi);
+                        this._blockContext.blockIndex = findBlockIndex(layouts, this._blockContext.contentUdi, this._blockContext.layoutKey);
                         if (!this._htmlMarkup && !this._isLoading) {
                             // Render straight away, even when the block has areas whose
                             // layoutAreas has not arrived. A newly added, unsaved block is
@@ -195,7 +207,7 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
     }
 
     #filterLayouts(): UmbBlockGridLayoutModel[] {
-        const areas = this._blockContext.areas.map(area => {
+        const areas = (this._blockContext.areas ?? []).map(area => {
             const model: UmbBlockGridLayoutAreaItemModel = {
                 key: area.key,
                 items: this._blockContext.layoutAreas?.find(layout => layout.key === area.key)?.items ?? []
@@ -206,13 +218,16 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
         const layoutModel: UmbBlockGridLayoutModel[] =
             [
                 {
+                    // The layout item's own key; the same Library element can appear more than once.
+                    key: this._blockContext.layoutKey,
                     areas: areas,
                     columnSpan: this._blockContext.layout?.columnSpan ?? 0,
                     rowSpan: this._blockContext.layout?.rowSpan ?? 0,
                     // A new block renders before its layout entry arrives (#322), so fall back to the
                     // entry's own keys: an empty contentKey can't be read as a Guid on the server.
                     contentKey: this._blockContext.layout?.contentKey || this._blockContext.contentUdi,
-                    settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || undefined
+                    settingsKey: this._blockContext.layout?.settingsKey || this._blockContext.settingsUdi || undefined,
+                    isExternalContent: this._blockContext.isExternalContent || undefined
                 }
             ];
 
@@ -230,7 +245,8 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
                 contentUdi: this._blockContext.contentUdi,
                 settingsUdi: this._blockContext.settingsUdi,
                 culture: this.previewCulture,
-                blockIndex: this._blockContext.blockIndex
+                blockIndex: this._blockContext.blockIndex,
+                layoutKey: this.layoutKeyQuery
             }
         );
     }
@@ -244,7 +260,9 @@ export class BlockGridPreviewCustomView extends BlockPreviewBaseElement<BlockGri
     }
 
     protected override validatePreviewData(): boolean {
-        return super.validatePreviewData() && this._blockContext.contentUdi !== '';
+        // Not while the block type is unresolved: `areas` would go out as an empty list (see
+        // observeBlockValue). Every render path, including the base class's, passes through here.
+        return super.validatePreviewData() && this._blockContext.contentUdi !== '' && this._blockContext.areas !== undefined;
     }
 
     static override styles = [

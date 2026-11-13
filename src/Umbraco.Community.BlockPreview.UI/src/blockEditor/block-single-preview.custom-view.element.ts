@@ -4,6 +4,7 @@ import { PreviewDataSource } from '../repository';
 import { css, customElement, property, state } from "@umbraco-cms/backoffice/external/lit";
 import { UMB_BLOCK_SINGLE_ENTRY_CONTEXT, UMB_BLOCK_SINGLE_MANAGER_CONTEXT, UmbBlockSingleValueModel } from "@umbraco-cms/backoffice/block-single";
 import { UMB_CONTENT_WORKSPACE_CONTEXT } from "@umbraco-cms/backoffice/content";
+import { filterLayoutsByKey, findBlockIndex } from './layout-key';
 import { observeMultiple } from "@umbraco-cms/backoffice/observable-api";
 
 const elementName = "block-single-preview";
@@ -22,6 +23,8 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
         unique: '',
         documentTypeUnique: '',
         contentUdi: '',
+        layoutKey: '',
+        isExternalContent: false,
         settingsUdi: '',
         blockEditorAlias: '',
         culture: '',
@@ -89,20 +92,23 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
                         context.settingsKey,
                         context.workspaceEditContentPath,
                         context.contentElementTypeAlias,
-                        context.contentElementTypeKey
+                        context.contentElementTypeKey,
+                        context.layout
                     ]),
                     async ([
                         contentUdi,
                         settingsUdi,
                         workspaceEditContentPath,
                         contentElementTypeAlias,
-                        contentElementTypeKey
+                        contentElementTypeKey,
+                        layout
                     ]) => {
                         this._blockContext.contentUdi = contentUdi ?? '';
                         this._blockContext.settingsUdi = settingsUdi ?? '';
                         this._blockContext.workspaceEditContentPath = workspaceEditContentPath ?? '';
                         this._blockContext.contentElementTypeAlias = contentElementTypeAlias ?? '';
                         this._blockContext.contentElementTypeKey = contentElementTypeKey ?? '';
+                        this.applyLayoutIdentity(layout);
 
                         if (!this.#managerObserved) {
                             this.#managerObserved = true;
@@ -141,12 +147,12 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
                             settingsData: settings?.filter(x => x.key === this._blockContext.settingsUdi) ?? [],
                             expose: exposes?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? [],
                             layout: {
-                                ['Umbraco.SingleBlock']: layouts?.filter(x => x.contentKey === this._blockContext.contentUdi) ?? []
+                                ['Umbraco.SingleBlock']: filterLayoutsByKey(layouts, this._blockContext.layoutKey)
                             }
                         };
 
                         this.setExposes(exposes);
-                        this._blockContext.blockIndex = contents?.indexOf(this.blockSingleValue.contentData[0]);
+                        this._blockContext.blockIndex = findBlockIndex(layouts, this._blockContext.contentUdi, this._blockContext.layoutKey);
                         if (!this._htmlMarkup && !this._isLoading) {
                             this.renderBlockPreview();
                         }
@@ -168,6 +174,7 @@ export class BlockSinglePreviewCustomView extends BlockPreviewBaseElement<BlockC
                 settingsUdi: this._blockContext.settingsUdi,
                 culture: this.previewCulture,
                 blockIndex: this._blockContext.blockIndex,
+                layoutKey: this.layoutKeyQuery
             }
         );
     }

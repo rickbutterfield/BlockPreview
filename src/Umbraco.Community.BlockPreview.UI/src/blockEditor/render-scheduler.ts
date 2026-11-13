@@ -13,7 +13,7 @@ export const GRID_RESIZE_DEBOUNCE_MS = 300;
 
 export type GridRenderTrigger =
     | { kind: 'none' }
-    | { kind: 'render'; reason: 'layout-areas-arrived' }
+    | { kind: 'render'; reason: 'layout-areas-arrived' | 'areas-resolved' }
     | { kind: 'debounce'; reason: 'resized'; delayMs: number };
 
 /**
@@ -21,12 +21,25 @@ export type GridRenderTrigger =
  * re-render in response to an observed layout/layoutAreas update.
  */
 export function decideGridRenderTrigger(
-    prev: { layoutAreas: unknown[] | undefined; layout: GridLayoutSpan | undefined },
+    prev: { areas: unknown[] | undefined; layoutAreas: unknown[] | undefined; layout: GridLayoutSpan | undefined },
     next: { areas: unknown[] | undefined; layoutAreas: unknown[] | undefined; layout: GridLayoutSpan | undefined },
-    state: { hasMarkup: boolean; managerObserved: boolean },
+    state: { hasMarkup: boolean; managerObserved: boolean; isLoading?: boolean },
 ): GridRenderTrigger {
     const hasAreas = (next.areas?.length ?? 0) > 0;
+    // `areas` is undefined until the block type resolves (a Library block's does so
+    // asynchronously), which is "not known yet", not "no areas". The view does not
+    // render while it is unknown, so this is the first moment it can.
+    const areasJustResolved = prev.areas === undefined && next.areas !== undefined;
     const layoutAreasJustArrived = !prev.layoutAreas && !!next.layoutAreas;
+
+    // One-shot, like the one below: render once, and only if nothing has rendered yet. The
+    // view never renders while `areas` is unknown (validatePreviewData), so no earlier
+    // render can have carried an empty area list and none needs replacing; rendering again
+    // here would send a second request for every block that has areas on load. Checked
+    // before layout-areas-arrived so both arriving together give one render.
+    if (areasJustResolved && state.managerObserved && !state.hasMarkup && !state.isLoading) {
+        return { kind: 'render', reason: 'areas-resolved' };
+    }
 
     // Deliberately not gated on an in-flight request. `layoutAreasJustArrived` is a
     // one-shot: the caller reads prevLayoutAreas from state it overwrites on the same

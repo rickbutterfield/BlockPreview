@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -22,6 +24,8 @@ public class BlockDataConverterTests
     private Mock<ILogger<BlockDataConverter>> _loggerMock = null!;
 
     private const string TestEditorAlias = "Umbraco.TextBox";
+    private const string ImageCropperAlias = "Umbraco.ImageCropper";
+    private const string UploadFieldAlias = "Umbraco.UploadField";
 
     [SetUp]
     public void SetUp()
@@ -31,11 +35,15 @@ public class BlockDataConverterTests
         _valueEditorMock = new Mock<IDataValueEditor>();
         _loggerMock = new Mock<ILogger<BlockDataConverter>>();
 
-        var dataEditorMock = new Mock<IDataEditor>();
-        dataEditorMock.Setup(e => e.Alias).Returns(TestEditorAlias);
-        dataEditorMock.Setup(e => e.GetValueEditor()).Returns(_valueEditorMock.Object);
+        var dataEditors = new[] { TestEditorAlias, ImageCropperAlias, UploadFieldAlias }.Select(alias =>
+        {
+            var dataEditorMock = new Mock<IDataEditor>();
+            dataEditorMock.Setup(e => e.Alias).Returns(alias);
+            dataEditorMock.Setup(e => e.GetValueEditor()).Returns(_valueEditorMock.Object);
+            return dataEditorMock.Object;
+        }).ToArray();
 
-        var dataEditorCollection = new DataEditorCollection(() => new[] { dataEditorMock.Object });
+        var dataEditorCollection = new DataEditorCollection(() => dataEditors);
         var propertyEditors = new PropertyEditorCollection(dataEditorCollection);
 
         _converter = new BlockDataConverter(
@@ -234,6 +242,105 @@ public class BlockDataConverterTests
         VerifyWarningLogged(Times.Once());
     }
 
+    private static IEnumerable<TestCaseData> AsNodeAndElement(string alias, string json)
+    {
+        yield return new TestCaseData(alias, JsonNode.Parse(json)).SetName($"{alias} JsonNode {json}");
+        yield return new TestCaseData(alias, JsonDocument.Parse(json).RootElement).SetName($"{alias} JsonElement {json}");
+    }
+
+    private static IEnumerable<TestCaseData> EmptyShapes()
+    {
+        foreach (var json in new[] { "{\"src\":\"\"}", "{\"src\":null}", "{}", "{\"crops\":[],\"name\":\"\"}", "[]", "\"\"" })
+        {
+            foreach (var alias in new[] { TestEditorAlias, ImageCropperAlias, UploadFieldAlias })
+            {
+                foreach (var data in AsNodeAndElement(alias, json)) yield return data;
+            }
+        }
+
+        foreach (var json in new[]
+        {
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}",
+            "{\"focalPoint\":null,\"crops\":[],\"src\":\"\",\"temporaryFileId\":\"\"}"
+        })
+        {
+            foreach (var data in AsNodeAndElement(ImageCropperAlias, json)) yield return data;
+        }
+    }
+
+    private static IEnumerable<TestCaseData> RealShapes()
+    {
+        // The image cropper and upload field skip FromEditor (see SkippedShapes), so only other editors can drop real data here
+        foreach (var (alias, json) in new[]
+        {
+            (UploadFieldAlias, "{\"src\":\"/media/a.pdf\"}"),
+            (TestEditorAlias, "{\"src\":\"\",\"url\":\"https://example.com/a.jpg\"}"),
+            (TestEditorAlias, "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}"),
+            (TestEditorAlias, "{\"src\":\"/media/a.jpg\",\"crops\":[]}"),
+            (TestEditorAlias, "{\"value\":0}"),
+            (TestEditorAlias, "{\"enabled\":false}"),
+            (TestEditorAlias, "0"),
+            (TestEditorAlias, "false")
+        })
+        {
+            foreach (var data in AsNodeAndElement(alias, json)) yield return data;
+        }
+    }
+
+    [TestCaseSource(nameof(EmptyShapes))]
+    public void FormatBlockData_WhenFromEditorReturnsNullForEmptyJsonShape_DoesNotLogWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [TestCaseSource(nameof(EmptyShapes))]
+    public void FormatBlockData_WhenFromEditorThrowsForEmptyJsonShape_KeepsValueAndDoesNotLogWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new Exception("Invalid content key."));
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Never());
+    }
+
+    [TestCaseSource(nameof(RealShapes))]
+    public void FormatBlockData_WhenFromEditorReturnsNullForRealJsonShape_LogsWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns((object?)null);
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        VerifyWarningLogged(Times.Once());
+    }
+
+    [TestCaseSource(nameof(RealShapes))]
+    public void FormatBlockData_WhenFromEditorThrowsForRealJsonShape_KeepsValueAndLogsWarning(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new Exception("boom"));
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Once());
+    }
+
     private void VerifyWarningLogged(Times times) =>
         _loggerMock.Verify(
             l => l.Log(
@@ -243,6 +350,90 @@ public class BlockDataConverterTests
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times);
+
+    #endregion
+
+    #region Editors that need a content key skip FromEditor
+
+    private static IEnumerable<TestCaseData> SkippedShapes()
+    {
+        var guid = Guid.NewGuid();
+        foreach (var json in new[]
+        {
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"\"}",
+            "{\"focalPoint\":{\"left\":0.5,\"top\":0.5},\"crops\":[],\"src\":\"/media/x/y.png\"}",
+            $"{{\"focalPoint\":{{\"left\":0.5,\"top\":0.5}},\"crops\":[],\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}"
+        })
+        {
+            foreach (var data in AsNodeAndElement(ImageCropperAlias, json)) yield return data;
+        }
+
+        foreach (var data in AsNodeAndElement(UploadFieldAlias, $"{{\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}")) yield return data;
+        foreach (var data in AsNodeAndElement(UploadFieldAlias, $"{{\"src\":\"/media/x/y.pdf\",\"temporaryFileId\":\"{guid}\"}}")) yield return data;
+        yield return new TestCaseData(UploadFieldAlias, $"{{\"src\":\"\",\"temporaryFileId\":\"{guid}\"}}")
+            .SetName($"{UploadFieldAlias} string temporaryFileId");
+    }
+
+    [TestCaseSource(nameof(SkippedShapes))]
+    public void FormatBlockData_ForEditorsNeedingContentKey_SkipsFromEditorAndKeepsValue(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), It.IsAny<object?>()))
+            .Throws(new Exception("Invalid content key."));
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), It.IsAny<object?>()),
+            Times.Never);
+        Assert.That(prop.Value, Is.SameAs(original));
+        VerifyWarningLogged(Times.Never());
+    }
+
+    private static IEnumerable<TestCaseData> UploadShapesWithoutTemporaryFile()
+    {
+        foreach (var json in new[] { "{\"src\":\"\"}", "{\"src\":\"/media/x/y.pdf\"}", "{\"src\":\"\",\"temporaryFileId\":\"\"}" })
+        {
+            foreach (var data in AsNodeAndElement(UploadFieldAlias, json)) yield return data;
+        }
+    }
+
+    // A saved upload is mapped to its file URL (the form the element's value converter reads) and an empty one to null.
+    [TestCaseSource(nameof(UploadShapesWithoutTemporaryFile))]
+    public void FormatBlockData_ForUploadFieldWithoutTemporaryFile_StillCallsFromEditor(string alias, object original)
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Returns("/media/x/y.pdf");
+
+        var prop = CreatePropertyValue(alias, original);
+        _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) });
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
+            Times.Once);
+        Assert.That(prop.Value, Is.EqualTo("/media/x/y.pdf"));
+    }
+
+    [Test]
+    public void FormatBlockData_ForUploadFieldWithUndefinedJsonElement_DoesNotThrowAndStillCallsFromEditor()
+    {
+        _valueEditorMock
+            .Setup(v => v.FromEditor(It.IsAny<ContentPropertyData>(), null))
+            .Throws(new ArgumentException("undefined"));
+
+        var original = default(JsonElement);
+        var prop = CreatePropertyValue(UploadFieldAlias, original);
+
+        Assert.DoesNotThrow(() => _converter.FormatBlockData(new List<BlockItemData> { CreateBlockItemData(prop) }));
+
+        _valueEditorMock.Verify(
+            v => v.FromEditor(It.IsAny<ContentPropertyData>(), null),
+            Times.Once);
+        Assert.That(prop.Value, Is.EqualTo(original));
+        VerifyWarningLogged(Times.Never());
+    }
 
     #endregion
 

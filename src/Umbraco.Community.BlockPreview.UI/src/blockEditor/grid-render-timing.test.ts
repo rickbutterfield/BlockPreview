@@ -80,14 +80,21 @@ function createContentWorkspaceFake(host: HTMLElement) {
     };
 }
 
-function createGridEntryFake(host: HTMLElement, layoutAreasState: UmbBasicState<UmbBlockGridLayoutAreaItemModel[] | undefined>, hasAreas: boolean) {
+function createGridEntryFake(
+    host: HTMLElement,
+    layoutAreasState: UmbBasicState<UmbBlockGridLayoutAreaItemModel[] | undefined>,
+    hasAreas: boolean,
+    areasState?: UmbBasicState<{ key: string }[] | undefined>,
+    unsupportedState?: UmbBasicState<boolean | undefined>,
+) {
     return {
         contentKey: new UmbStringState(CONTENT_KEY).asObservable(),
         settingsKey: new UmbBasicState<string | undefined>(undefined).asObservable(),
         workspaceEditContentPath: new UmbStringState('/edit/path').asObservable(),
         contentElementTypeAlias: new UmbStringState('myElement').asObservable(),
         contentElementTypeKey: new UmbStringState(ELEMENT_TYPE_KEY).asObservable(),
-        areas: new UmbArrayState(hasAreas ? [{ key: AREA_KEY }] : [], (x: { key: string }) => x.key).asObservable(),
+        areas: (areasState ?? new UmbBasicState<{ key: string }[] | undefined>(hasAreas ? [{ key: AREA_KEY }] : [])).asObservable(),
+        unsupported: (unsupportedState ?? new UmbBasicState<boolean | undefined>(false)).asObservable(),
         layout: new UmbBasicState<UmbBlockGridLayoutModel>({ contentKey: CONTENT_KEY, columnSpan: 6, rowSpan: 1, areas: [] }).asObservable(),
         layoutAreas: layoutAreasState.asObservable(),
         getHostElement: () => host,
@@ -98,6 +105,7 @@ function createGridManagerFake(host: HTMLElement) {
     return {
         contents: new UmbArrayState([{ key: CONTENT_KEY, contentTypeKey: ELEMENT_TYPE_KEY }], (x: { key: string }) => x.key).asObservable(),
         settings: new UmbArrayState<{ key: string }>([], (x) => x.key).asObservable(),
+        layouts: new UmbArrayState<{ key: string }>([], (x) => x.key).asObservable(),
         exposes: new UmbArrayState<{ contentKey: string }>([], (x) => x.contentKey).asObservable(),
         propertyAlias: new UmbStringState('myBlockGrid').asObservable(),
         getHostElement: () => host,
@@ -203,6 +211,106 @@ describe('block grid preview render timing (issues #293/#294/#322)', () => {
 
         expect(rerendered, 'layoutAreas arriving mid-request must still trigger a re-render').to.be.true;
         expect(el.renderCalls[1], 'the re-render must carry the nested area content').to.contain(NESTED_CONTENT_KEY);
+    });
+
+    // CMS 19.0.0-rc1 (umbraco/Umbraco-CMS#24581): `areas` is undefined until the block
+    // type resolves, which a Library block's does asynchronously. That is "not known
+    // yet", not "no areas", so nothing may be posted for it.
+    it('waits for the block type to resolve before the first render, then posts the saved area children (Library block in a grid area)', async () => {
+        root = await mountHost();
+
+        const areasState = new UmbBasicState<{ key: string }[] | undefined>(undefined);
+        const layoutAreasState = new UmbBasicState<UmbBlockGridLayoutAreaItemModel[] | undefined>([
+            { key: AREA_KEY, items: [{ contentKey: NESTED_CONTENT_KEY }] },
+        ] as never);
+        root.provideContext(UMB_BLOCK_GRID_ENTRY_CONTEXT, createGridEntryFake(root, layoutAreasState, true, areasState) as never);
+        root.provideContext(UMB_BLOCK_GRID_MANAGER_CONTEXT, createGridManagerFake(root) as never);
+
+        const el = document.createElement(previewTag) as SpyGridPreview;
+        root.appendChild(el);
+
+        await new Promise((r) => setTimeout(r, 200));
+        expect(el.renderCalls.length, 'an unresolved block type must not render with an empty area list').to.equal(0);
+
+        areasState.setValue([{ key: AREA_KEY }]);
+
+        const rendered = await waitForCondition(() => el.renderCalls.length > 0);
+        expect(rendered, 'must render once the block type resolves').to.be.true;
+        await new Promise((r) => setTimeout(r, 100));
+        expect(el.renderCalls.length, 'exactly one render once resolved').to.equal(1);
+        expect(JSON.parse(el.renderCalls[0])['Umbraco.BlockGrid'][0].areas).to.deep.equal([
+            { key: AREA_KEY, items: [{ contentKey: NESTED_CONTENT_KEY }] },
+        ]);
+    });
+
+    it('does not render on a content change while the block type is unresolved, then renders with the area items once it resolves', async () => {
+        root = await mountHost();
+
+        const areasState = new UmbBasicState<{ key: string }[] | undefined>(undefined);
+        const layoutAreasState = new UmbBasicState<UmbBlockGridLayoutAreaItemModel[] | undefined>([
+            { key: AREA_KEY, items: [{ contentKey: NESTED_CONTENT_KEY }] },
+        ] as never);
+        root.provideContext(UMB_BLOCK_GRID_ENTRY_CONTEXT, createGridEntryFake(root, layoutAreasState, true, areasState) as never);
+        root.provideContext(UMB_BLOCK_GRID_MANAGER_CONTEXT, createGridManagerFake(root) as never);
+
+        const el = document.createElement(previewTag) as SpyGridPreview;
+        el.apiDelayMs = 150;
+        root.appendChild(el);
+        await new Promise((r) => setTimeout(r, 100));
+
+        // The base class re-renders on a content change; with no block type yet that
+        // would post an empty area list that nothing replaces later.
+        el.content = { key: CONTENT_KEY, contentTypeKey: ELEMENT_TYPE_KEY, values: [] } as never;
+        await el.updateComplete;
+        await new Promise((r) => setTimeout(r, 100));
+        expect(el.renderCalls.length, 'no render with an unresolved block type').to.equal(0);
+
+        areasState.setValue([{ key: AREA_KEY }]);
+        await waitForCondition(() => el.renderCalls.length > 0);
+        await new Promise((r) => setTimeout(r, 300));
+
+        expect(el.renderCalls.length).to.equal(1);
+        expect(JSON.parse(el.renderCalls[0])['Umbraco.BlockGrid'][0].areas).to.deep.equal([
+            { key: AREA_KEY, items: [{ contentKey: NESTED_CONTENT_KEY }] },
+        ]);
+    });
+
+    it('renders an unsupported block (block type no longer configured) with no areas, so the server can say why', async () => {
+        root = await mountHost();
+
+        const unsupportedState = new UmbBasicState<boolean | undefined>(undefined);
+        const areasState = new UmbBasicState<{ key: string }[] | undefined>(undefined);
+        root.provideContext(UMB_BLOCK_GRID_ENTRY_CONTEXT, createGridEntryFake(root, new UmbBasicState(undefined), false, areasState, unsupportedState) as never);
+        root.provideContext(UMB_BLOCK_GRID_MANAGER_CONTEXT, createGridManagerFake(root) as never);
+
+        const el = document.createElement(previewTag) as SpyGridPreview;
+        root.appendChild(el);
+        await new Promise((r) => setTimeout(r, 100));
+        expect(el.renderCalls.length).to.equal(0);
+
+        unsupportedState.setValue(true);
+        const rendered = await waitForCondition(() => el.renderCalls.length > 0);
+
+        expect(rendered, 'an unsupported block never gets a block type, so it must not wait for one').to.be.true;
+        expect(JSON.parse(el.renderCalls[0])['Umbraco.BlockGrid'][0].areas).to.deep.equal([]);
+    });
+
+    it('renders a resolved block type with no areas without waiting for layoutAreas', async () => {
+        root = await mountHost();
+
+        const areasState = new UmbBasicState<{ key: string }[] | undefined>(undefined);
+        root.provideContext(UMB_BLOCK_GRID_ENTRY_CONTEXT, createGridEntryFake(root, new UmbBasicState(undefined), false, areasState) as never);
+        root.provideContext(UMB_BLOCK_GRID_MANAGER_CONTEXT, createGridManagerFake(root) as never);
+
+        const el = document.createElement(previewTag) as SpyGridPreview;
+        root.appendChild(el);
+        await new Promise((r) => setTimeout(r, 100));
+        expect(el.renderCalls.length).to.equal(0);
+
+        areasState.setValue([]);
+        const rendered = await waitForCondition(() => el.renderCalls.length === 1);
+        expect(rendered).to.be.true;
+        expect(JSON.parse(el.renderCalls[0])['Umbraco.BlockGrid'][0].areas).to.deep.equal([]);
     });
 
     it('renders immediately for a block with no areas, regardless of layoutAreas', async () => {

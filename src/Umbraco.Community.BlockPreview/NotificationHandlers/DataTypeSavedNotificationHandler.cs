@@ -29,16 +29,6 @@ namespace Umbraco.Community.BlockPreview.NotificationHandlers
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DataTypeSavedNotificationHandler"/> class.
-        /// </summary>
-        /// <param name="appCaches">The application caches.</param>
-        [Obsolete("Use the constructor that accepts IContentTypeService for cascading cache invalidation. Scheduled for removal in v7.")]
-        public DataTypeSavedNotificationHandler(AppCaches appCaches)
-            : this(appCaches, StaticServiceProvider.Instance.GetRequiredService<IContentTypeService>())
-        {
-        }
-
-        /// <summary>
         /// Handles the data type saved notification.
         /// </summary>
         /// <param name="notification">The notification.</param>

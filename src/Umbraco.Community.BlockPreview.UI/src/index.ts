@@ -18,19 +18,10 @@ export const onInit: UmbEntryPointOnInit = async (host, extensionRegistry) => {
     host.consumeContext(UMB_AUTH_CONTEXT, async (authContext) => {
         if (!authContext) return;
 
-        const config = authContext.getOpenApiConfiguration();
-
-        client.setConfig({
-            baseUrl: config?.base ?? "",
-            auth: config?.token ?? undefined,
-            credentials: config?.credentials ?? "same-origin",
-        });
-
-        client.interceptors.request.use(async (request, _options) => {
-            const token = await config.token();
-            request.headers.set('Authorization', `Bearer ${token}`);
-            return request;
-        });
+        // Sets baseUrl and `credentials: 'include'` (the httpOnly auth cookie is the credential) and
+        // binds the backoffice's response interceptors. A 401 is retried for GET requests only, so a
+        // POST preview made after the session expired is not retried. No bearer token is sent.
+        authContext.configureClient(client);
 
         const settingsRepository = new SettingsRepository(host);
         const settings = await settingsRepository.getSettings();

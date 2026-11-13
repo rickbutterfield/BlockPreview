@@ -11,12 +11,16 @@ on:
       - "v5/main"
       - "v6/dev"
       - "v6/main"
+      - "v7/dev"
+      - "v7/main"
   pull_request:
     branches:
       - "v5/dev"
       - "v5/main"
       - "v6/dev"
       - "v6/main"
+      - "v7/dev"
+      - "v7/main"
   workflow_dispatch:
 
 # Least-privilege token: the test job only needs to read the repo.

@@ -45,6 +45,18 @@ namespace Umbraco.Community.BlockPreview.Interfaces
         IPublishedElement ConvertToElement(BlockItemData data, IPublishedElement owner);
 
         /// <summary>
+        /// Converts block item data to a published element for a culture-variant block property.
+        /// </summary>
+        /// <param name="data">The block item data.</param>
+        /// <param name="owner">The owner published element.</param>
+        /// <param name="owningPropertyCulture">The culture of the stored property value <paramref name="data"/> belongs to,
+        /// or <c>null</c> when the property holding the block value does not vary by culture.</param>
+        /// <returns>The converted published element.</returns>
+        // TODO (v8): Remove the default implementation.
+        IPublishedElement ConvertToElement(BlockItemData data, IPublishedElement owner, string? owningPropertyCulture)
+            => ConvertToElement(data, owner);
+
+        /// <summary>
         /// Formats block data for preview rendering.
         /// </summary>
         /// <param name="blockData">The block data to format.</param>

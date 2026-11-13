@@ -1,6 +1,9 @@
 # Usage
 
-This package installs a custom Web Component preview for the Block Grid, Block List and Rich Text editors in the backoffice.
+This package installs a custom Web Component preview for the Block Grid, Block List, Single Block and Rich Text editors in the backoffice.
+
+> [!NOTE]
+> BlockPreview 7.x requires Umbraco 19 and .NET 11. The 7.0.0 releases are pre-releases (`7.0.0-rc1`) while Umbraco 19 is a release candidate.
 
 How components look within the Block Grid before and after enabling BlockPreview:
 
@@ -105,6 +108,19 @@ If your front-end passes extra arguments, such as `new { model = item, currentPa
 
 
 All of these extensions can be found in the namespace `Umbraco.Community.BlockPreview.Extensions`. This ensures that the grid editors correctly load in the back office.
+
+## Library (reusable) elements
+Blocks that use an element from the Umbraco 19 Library are previewed like any other block, in Block List, Block Grid, Single Block and Rich Text. BlockPreview renders the draft of the Library element, so a change to it shows in every block that uses it. The same Library element can be used more than once in a property; each block previews its own instance.
+
+- **Permissions:** the preview only renders an element the current backoffice user may browse in the Library. Otherwise the block shows the alert "You do not have permission to preview the Library element used by this block."
+- **Missing elements:** if the Library element has been deleted or trashed, the block shows "The Library element used by this block could not be found." (In a Block Grid area, the child's own preview shows the alert, and the parent block's `Model.Areas` leaves the missing child out.)
+- Replace this behaviour by implementing [`IExternalElementResolver`](advanced-customization.md#iexternalelementresolver).
+
+## Culture-variant blocks
+When the block property varies by culture, the preview renders in the culture you are editing, so a view that reads culture-specific values shows the right language. Invariant properties preview as before. A block editor nested inside another block is previewed as invariant.
+
+## `blockIndex`
+`ViewData["blockIndex"]` (and the `blockIndex` passed to enrichers) is the block's position in the property's layout: for a root block its place among the root layout items, for a block inside a Block Grid area its place within that area, and `0` for a block that is not yet in the layout. It is the same for local and Library blocks. Rich Text blocks do not receive a `blockIndex`: `ViewData["blockIndex"]` is `null` there.
 
 ## Preview mode
 This package adds an `IsBlockPreviewRequest()` extension to `HttpContext.Request`, similar to `IsBackOfficeRequest()` and `IsFrontEndRequest()` so you can add custom code to your views that only appears in the back office.

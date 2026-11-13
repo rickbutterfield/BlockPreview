@@ -1,0 +1,20 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
+@{
+	Layout = "Layout.cshtml";
+}
+
+<h2>Block List</h2>
+@await Html.GetBlockListHtmlAsync(Model.Value<BlockListModel>("blockList"))
+
+<h2>Block Grid</h2>
+@await Html.GetBlockGridHtmlAsync(Model.Value<BlockGridModel>("blockGrid"))
+
+<h2>Single Block</h2>
+@if (Model.Value<BlockListItem>("singleBlock") is { } singleBlock)
+{
+	@await Html.GetBlockListHtmlAsync(new BlockListModel(new[] { singleBlock }))
+}
+
+<h2>Rich Text</h2>
+@Model.Value("richText")

@@ -74,31 +74,10 @@ public class BlockPreviewViewResolverTests
     #region Constructors
 
     [Test]
-    public void ObsoleteConstructor_WithWebHostEnvironment_ResolvesViews()
-    {
-        const string expectedPath = "Views/Partials/blockgrid/Components/testBlock.cshtml";
-        _razorViewEngineMock
-            .Setup(e => e.GetView("", expectedPath, false))
-            .Returns(Found(expectedPath));
-
-#pragma warning disable CS0618 // Type or member is obsolete
-        var resolver = new BlockPreviewViewResolver(
-            _razorViewEngineMock.Object,
-            Mock.Of<IWebHostEnvironment>(),
-            CreateOptionsMonitor());
-#pragma warning restore CS0618
-
-        var result = resolver.ResolveView("testBlock", BlockType.BlockGrid);
-
-        Assert.That(result?.Success, Is.True);
-    }
-
-    [Test]
-    public void ServiceProvider_WithBothConstructorsAvailable_CreatesResolver()
+    public void ServiceProvider_CreatesResolver()
     {
         var services = new ServiceCollection();
         services.AddSingleton(_razorViewEngineMock.Object);
-        services.AddSingleton(Mock.Of<IWebHostEnvironment>());
         services.AddSingleton(CreateOptionsMonitor());
         services.AddSingleton<IBlockPreviewViewResolver, BlockPreviewViewResolver>();
 

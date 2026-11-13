@@ -62,6 +62,77 @@ public class BlockPreviewComposerTests
         Assert.That(ResolveImplementationType<IBlockPreviewRequestEnricher>(), Is.EqualTo(typeof(CustomRequestEnricher)));
     }
 
+    [Test]
+    public void Compose_RegistersTheExternalElementResolver()
+    {
+        Compose();
+
+        Assert.That(ResolveImplementationType<IExternalElementResolver>(), Is.Not.Null);
+    }
+
+    // The obsolete BlockPreviewService constructor resolves the resolver from the root provider
+    // (StaticServiceProvider.Instance). With scope validation on, as in ASP.NET Core Development, that fails for a
+    // scoped registration.
+    [Test]
+    public void Compose_ExternalElementResolver_ResolvesFromTheRootProviderWithScopeValidation()
+    {
+        Compose();
+        _services.AddSingleton(Mock.Of<Umbraco.Cms.Core.PublishedCache.IElementCacheService>());
+        _services.AddSingleton(Mock.Of<Umbraco.Cms.Core.Services.IElementPermissionService>());
+        _services.AddSingleton(Mock.Of<Umbraco.Cms.Core.Security.IBackOfficeSecurityAccessor>());
+        _services.AddLogging();
+
+        using var provider = _services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = false });
+
+        Assert.That(provider.GetRequiredService<IExternalElementResolver>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void ObsoleteBlockPreviewServiceConstructor_GetsTheResolverFromTheRootProvider()
+    {
+        Compose();
+        _services.AddSingleton(Mock.Of<Umbraco.Cms.Core.PublishedCache.IElementCacheService>());
+        _services.AddSingleton(Mock.Of<Umbraco.Cms.Core.Services.IElementPermissionService>());
+        _services.AddSingleton(Mock.Of<Umbraco.Cms.Core.Security.IBackOfficeSecurityAccessor>());
+        _services.AddLogging();
+
+        var previous = Umbraco.Cms.Core.DependencyInjection.StaticServiceProvider.Instance;
+        using var provider = _services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        Umbraco.Cms.Core.DependencyInjection.StaticServiceProvider.Instance = provider;
+        try
+        {
+            // Call the obsolete nine-parameter constructor by reflection: this test is about its behaviour, not its use.
+            var obsolete = typeof(BlockPreviewService).GetConstructors()
+                .Single(c => c.GetParameters().Length == 9 && c.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length == 1);
+            var blockEditorConverter = new Umbraco.Cms.Core.PropertyEditors.ValueConverters.BlockEditorConverter(
+                Mock.Of<Umbraco.Cms.Core.PublishedCache.IPublishedContentTypeCache>(),
+                Mock.Of<IPublishedModelFactory>(),
+                Mock.Of<IVariationContextAccessor>(),
+                new Umbraco.Cms.Core.PropertyEditors.ValueConverters.BlockEditorVarianceHandler(
+                    Mock.Of<Umbraco.Cms.Core.Services.ILanguageService>(),
+                    Mock.Of<Umbraco.Cms.Core.Services.IContentTypeService>(),
+                    Mock.Of<IVariationContextAccessor>()),
+                Mock.Of<Umbraco.Cms.Core.PublishedCache.IBlockElementService>());
+
+            Assert.DoesNotThrow(() => obsolete.Invoke(
+            [
+                Mock.Of<IPublishedModelFactory>(),
+                blockEditorConverter,
+                Microsoft.Extensions.Options.Options.Create(new BlockPreviewOptions()),
+                Mock.Of<Umbraco.Cms.Core.Serialization.IJsonSerializer>(),
+                Mock.Of<IBlockModelFactory>(),
+                Mock.Of<IBlockViewRenderer>(),
+                Mock.Of<IBlockDataConverter>(),
+                Mock.Of<IBlockTypeCacheService>(),
+                Mock.Of<IBlockPreviewViewResolver>()
+            ]));
+        }
+        finally
+        {
+            Umbraco.Cms.Core.DependencyInjection.StaticServiceProvider.Instance = previous;
+        }
+    }
+
     private void Compose()
     {
         // BlockPreviewComposer is internal, so create it through the assembly it lives in.

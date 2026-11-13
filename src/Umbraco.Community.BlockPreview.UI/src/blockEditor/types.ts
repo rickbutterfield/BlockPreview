@@ -8,6 +8,10 @@ export interface BlockContext {
   unique: string;
   documentTypeUnique: string;
   contentUdi: string;
+  /** Key of the block's layout item; tells apart several uses of the same element (Umbraco 19). */
+  layoutKey: string;
+  /** The block shows a Library (reusable) element, so the manager has no local content for it. */
+  isExternalContent: boolean;
   settingsUdi: string;
   blockEditorAlias: string;
   culture: string;
@@ -18,7 +22,8 @@ export interface BlockContext {
 }
 
 export interface BlockGridContext extends BlockContext {
-  areas: UmbBlockGridTypeAreaType[];
+  /** `undefined` until the block's type resolves (a Library block's does so asynchronously); not the same as no areas. */
+  areas: UmbBlockGridTypeAreaType[] | undefined;
   layout?: UmbBlockGridLayoutModel | undefined;
   layoutAreas?: UmbBlockGridLayoutAreaItemModel[];
 }

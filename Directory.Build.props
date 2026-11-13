@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup Condition="'$(MSBuildProjectExtension)'=='.csproj'">
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>Rick Butterfield, Dave Woestenborghs, Matthew Wise</Authors>
@@ -16,8 +16,9 @@
   <!-- Package Validation -->
   <PropertyGroup Condition="'$(MSBuildProjectExtension)'=='.csproj'">
     <GenerateCompatibilitySuppressionFile>false</GenerateCompatibilitySuppressionFile>
-    <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageValidationBaselineVersion>6.0.0</PackageValidationBaselineVersion>
+    <!-- TODO (v7): Re-enable once 7.0.0 is published, so there is a baseline to validate against. -->
+    <EnablePackageValidation>false</EnablePackageValidation>
+    <PackageValidationBaselineVersion>7.0.0</PackageValidationBaselineVersion>
     <EnableStrictModeForCompatibleFrameworksInPackage>true</EnableStrictModeForCompatibleFrameworksInPackage>
     <EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>
   </PropertyGroup>
