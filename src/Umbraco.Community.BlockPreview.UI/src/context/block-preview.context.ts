@@ -2,6 +2,7 @@ import { UmbControllerBase } from "@umbraco-cms/backoffice/class-api";
 import { UmbControllerHost } from "@umbraco-cms/backoffice/controller-api";
 import { UmbStringState } from "@umbraco-cms/backoffice/observable-api";
 import { BlockPreviewRequestQueue } from "./block-preview-request-queue";
+import { resolveStylesheetUrls } from "./stylesheet-urls";
 
 export class BlockPreviewContext extends UmbControllerBase {
 
@@ -49,10 +50,12 @@ export class BlockPreviewContext extends UmbControllerBase {
         if (cached) return cached;
 
         const promise = fetch(href)
-            .then(response => response.text())
-            .then(css => {
+            .then(async response => {
+                const css = await response.text();
                 const sheet = new CSSStyleSheet();
-                sheet.replaceSync(css);
+                // A constructed stylesheet resolves relative url()s against the document, so
+                // they are resolved against the stylesheet itself before it is adopted.
+                sheet.replaceSync(resolveStylesheetUrls(css, response.url || new URL(href, document.baseURI).href));
                 return sheet;
             });
         this.#stylesheetCache.set(href, promise);
